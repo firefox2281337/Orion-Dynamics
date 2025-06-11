@@ -1,0 +1,419 @@
+<!-- web/templates/admin/plugins.html -->
+{% extends 'admin/base.html' %}
+
+{% block title %}Менеджер плагинов{% endblock %}
+
+{% block breadcrumb %}
+<i class="fas fa-chevron-right"></i>
+<span>Плагины</span>
+{% endblock %}
+
+{% block content %}
+<div class="plugin-manager">
+    <!-- Plugin Header -->
+    <div class="plugins-header">
+        <div class="header-left">
+            <h2>Менеджер плагинов</h2>
+            <p>Управление расширениями и дополнительными модулями</p>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-outline" onclick="scanForPlugins()">
+                <i class="fas fa-search"></i> Сканировать
+            </button>
+            <button class="btn btn-primary" onclick="uploadPlugin()">
+                <i class="fas fa-upload"></i> Загрузить плагин
+            </button>
+        </div>
+    </div>
+
+    <!-- Plugin Stats -->
+    <div class="stats-grid">
+        <div class="stat-card primary">
+            <div class="stat-icon">
+                <i class="fas fa-puzzle-piece"></i>
+            </div>
+            <div class="stat-content">
+                <h3>8</h3>
+                <p>Установлено</p>
+            </div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3>6</h3>
+                <p>Активно</p>
+            </div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <h3>2</h3>
+                <p>Требуют обновления</p>
+            </div>
+        </div>
+        <div class="stat-card info">
+            <div class="stat-icon">
+                <i class="fas fa-download"></i>
+            </div>
+            <div class="stat-content">
+                <h3>15</h3>
+                <p>Доступно</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plugin Tabs -->
+    <div class="plugin-tabs">
+        <button class="tab-btn active" data-tab="installed">Установленные</button>
+        <button class="tab-btn" data-tab="available">Доступные</button>
+        <button class="tab-btn" data-tab="marketplace">Магазин плагинов</button>
+    </div>
+
+    <!-- Installed Plugins -->
+    <div id="installed" class="tab-content active">
+        <div class="plugins-grid">
+            <div class="plugin-card active">
+                <div class="plugin-header">
+                    <div class="plugin-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="plugin-info">
+                        <h3>Database Manager</h3>
+                        <p>Расширенное управление базами данных</p>
+                        <div class="plugin-meta">
+                            <span class="version">v2.1.0</span>
+                            <span class="author">Admin Team</span>
+                        </div>
+                    </div>
+                    <div class="plugin-status">
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="plugin-actions">
+                    <button class="btn btn-sm btn-outline">
+                        <i class="fas fa-cog"></i> Настройки
+                    </button>
+                    <button class="btn btn-sm btn-outline">
+                        <i class="fas fa-info"></i> Подробности
+                    </button>
+                    <button class="btn btn-sm btn-danger">
+                        <i class="fas fa-trash"></i> Удалить
+                    </button>
+                </div>
+            </div>
+
+            <div class="plugin-card inactive">
+                <div class="plugin-header">
+                    <div class="plugin-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="plugin-info">
+                        <h3>Advanced Analytics</h3>
+                        <p>Детальная аналитика и отчеты</p>
+                        <div class="plugin-meta">
+                            <span class="version">v1.5.2</span>
+                            <span class="author">Analytics Co</span>
+                            <span class="update-available">Обновление доступно</span>
+                        </div>
+                    </div>
+                    <div class="plugin-status">
+                        <label class="switch">
+                            <input type="checkbox">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="plugin-actions">
+                    <button class="btn btn-sm btn-primary">
+                        <i class="fas fa-sync"></i> Обновить
+                    </button>
+                    <button class="btn btn-sm btn-outline">
+                        <i class="fas fa-cog"></i> Настройки
+                    </button>
+                </div>
+            </div>
+
+            <div class="plugin-card active">
+                <div class="plugin-header">
+                    <div class="plugin-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="plugin-info">
+                        <h3>Security Monitor</h3>
+                        <p>Мониторинг безопасности системы</p>
+                        <div class="plugin-meta">
+                            <span class="version">v3.0.1</span>
+                            <span class="author">SecureApp</span>
+                        </div>
+                    </div>
+                    <div class="plugin-status">
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="plugin-actions">
+                    <button class="btn btn-sm btn-outline">
+                        <i class="fas fa-eye"></i> Логи
+                    </button>
+                    <button class="btn btn-sm btn-outline">
+                        <i class="fas fa-cog"></i> Настройки
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Plugins -->
+    <div id="available" class="tab-content">
+        <div class="plugins-grid">
+            <div class="plugin-card available">
+                <div class="plugin-header">
+                    <div class="plugin-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="plugin-info">
+                        <h3>Email Notifications</h3>
+                        <p>Система email уведомлений</p>
+                        <div class="plugin-meta">
+                            <span class="version">v1.2.0</span>
+                            <span class="size">2.1 МБ</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="plugin-actions">
+                    <button class="btn btn-sm btn-success">
+                        <i class="fas fa-download"></i> Установить
+                    </button>
+                    <button class="btn btn-sm btn-outline">
+                        <i class="fas fa-info"></i> Подробности
+                    </button>
+                </div>
+            </div>
+
+            <div class="plugin-card available">
+                <div class="plugin-header">
+                    <div class="plugin-icon">
+                        <i class="fas fa-cloud"></i>
+                    </div>
+                    <div class="plugin-info">
+                        <h3>Cloud Backup</h3>
+                        <p>Резервное копирование в облако</p>
+                        <div class="plugin-meta">
+                            <span class="version">v2.0.0</span>
+                            <span class="size">5.7 МБ</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="plugin-actions">
+                    <button class="btn btn-sm btn-success">
+                        <i class="fas fa-download"></i> Установить
+                    </button>
+                    <button class="btn btn-sm btn-outline">
+                        <i class="fas fa-info"></i> Подробности
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Marketplace -->
+    <div id="marketplace" class="tab-content">
+        <div class="marketplace-content">
+            <div class="marketplace-placeholder">
+                <i class="fas fa-store"></i>
+                <h3>Магазин плагинов</h3>
+                <p>Здесь будет отображаться каталог доступных плагинов</p>
+                <button class="btn btn-primary">Обновить каталог</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.plugins-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.header-right {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.plugin-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tab-btn {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.plugins-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 1.5rem;
+}
+
+.plugin-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: transform 0.2s ease;
+}
+
+.plugin-card:hover {
+    transform: translateY(-2px);
+}
+
+.plugin-card.active {
+    border-left: 4px solid var(--success-color);
+}
+
+.plugin-card.inactive {
+    border-left: 4px solid var(--text-secondary);
+}
+
+.plugin-card.available {
+    border-left: 4px solid var(--info-color);
+}
+
+.plugin-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.plugin-icon {
+    width: 50px;
+    height: 50px;
+    background: var(--primary-color);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.plugin-info {
+    flex: 1;
+}
+
+.plugin-info h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+}
+
+.plugin-info p {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.plugin-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.update-available {
+    color: var(--warning-color) !important;
+    font-weight: 600;
+}
+
+.plugin-status {
+    margin-left: auto;
+}
+
+.plugin-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.marketplace-placeholder {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-secondary);
+}
+
+.marketplace-placeholder i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.marketplace-placeholder h3 {
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    setupPluginTabs();
+});
+
+function setupPluginTabs() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabName = btn.dataset.tab;
+            
+            // Update active tab button
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Show corresponding content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+        });
+    });
+}
+
+function scanForPlugins() {
+    console.log('Scanning for plugins...');
+}
+
+function uploadPlugin() {
+    console.log('Upload plugin dialog...');
+}
+</script>
+{% endblock %}

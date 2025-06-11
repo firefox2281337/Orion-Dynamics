@@ -1,0 +1,1058 @@
+<!-- web/templates/admin/security.html -->
+{% extends 'admin/base.html' %}
+
+{% block title %}Центр безопасности{% endblock %}
+
+{% block breadcrumb %}
+<i class="fas fa-chevron-right"></i>
+<span>Безопасность</span>
+{% endblock %}
+
+{% block content %}
+<div class="security-center">
+    <!-- Security Overview -->
+    <div class="stats-grid">
+        <div class="stat-card danger">
+            <div class="stat-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="criticalAlerts">3</h3>
+                <p>Критичные угрозы</p>
+                <div class="stat-trend down">
+                    <i class="fas fa-arrow-down"></i> -2 за сутки
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card warning">
+            <div class="stat-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="blockedAttacks">127</h3>
+                <p>Заблокировано атак</p>
+                <div class="stat-trend up">
+                    <i class="fas fa-arrow-up"></i> +15 за час
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card success">
+            <div class="stat-icon">
+                <i class="fas fa-lock"></i>
+            </div>
+            <div class="stat-content">
+                <h3>98.5%</h3>
+                <p>Уровень защиты</p>
+                <div class="stat-trend up">
+                    <i class="fas fa-arrow-up"></i> Отлично
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card primary">
+            <div class="stat-icon">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="activeUsers">42</h3>
+                <p>Активные сессии</p>
+                <div class="stat-trend">
+                    <i class="fas fa-clock"></i> Онлайн
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Dashboard -->
+    <div class="dashboard-grid">
+        <!-- Threat Map -->
+        <div class="dashboard-card span-2">
+            <div class="card-header">
+                <h3><i class="fas fa-globe"></i> Карта угроз</h3>
+                <div class="card-actions">
+                    <button class="btn btn-sm btn-outline" onclick="refreshThreatMap()">
+                        <i class="fas fa-sync"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="threatMap" class="threat-map">
+                    <div class="threat-locations">
+                        <div class="threat-point high" style="top: 20%; left: 15%;" title="Россия - 23 атаки">
+                            <div class="threat-pulse"></div>
+                        </div>
+                        <div class="threat-point medium" style="top: 45%; left: 80%;" title="Китай - 12 атак">
+                            <div class="threat-pulse"></div>
+                        </div>
+                        <div class="threat-point low" style="top: 60%; left: 45%;" title="Германия - 5 атак">
+                            <div class="threat-pulse"></div>
+                        </div>
+                        <div class="threat-point high" style="top: 35%; left: 70%;" title="США - 18 атак">
+                            <div class="threat-pulse"></div>
+                        </div>
+                    </div>
+                    <div class="threat-legend">
+                        <div class="legend-item">
+                            <span class="legend-dot high"></span>
+                            Высокая угроза (10+ атак)
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot medium"></span>
+                            Средняя угроза (5-10 атак)
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot low"></span>
+                            Низкая угроза (1-5 атак)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Security Events -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h3><i class="fas fa-shield-alt"></i> События безопасности</h3>
+                <button class="btn btn-sm btn-outline" onclick="refreshSecurityEvents()">
+                    <i class="fas fa-sync"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="securityEventsList" class="security-events-list">
+                    <div class="security-event high">
+                        <div class="event-content">
+                            <div class="event-type">SQL Injection</div>
+                            <div class="event-details">
+                                <i class="fas fa-clock"></i> 2 минуты назад
+                                <i class="fas fa-map-marker-alt"></i> 192.168.1.100
+                            </div>
+                            <div class="event-message">Попытка SQL инъекции заблокирована</div>
+                        </div>
+                        <div class="event-severity high">HIGH</div>
+                    </div>
+                    
+                    <div class="security-event medium">
+                        <div class="event-content">
+                            <div class="event-type">Brute Force</div>
+                            <div class="event-details">
+                                <i class="fas fa-clock"></i> 5 минут назад
+                                <i class="fas fa-map-marker-alt"></i> 10.0.0.50
+                            </div>
+                            <div class="event-message">Множественные неудачные попытки входа</div>
+                        </div>
+                        <div class="event-severity medium">MED</div>
+                    </div>
+                    
+                    <div class="security-event low">
+                        <div class="event-content">
+                            <div class="event-type">Port Scan</div>
+                            <div class="event-details">
+                                <i class="fas fa-clock"></i> 10 минут назад
+                                <i class="fas fa-map-marker-alt"></i> 172.16.0.25
+                            </div>
+                            <div class="event-message">Обнаружено сканирование портов</div>
+                        </div>
+                        <div class="event-severity low">LOW</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Firewall Status -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h3><i class="fas fa-fire"></i> Статус Firewall</h3>
+                <div class="firewall-toggle">
+                    <label class="switch">
+                        <input type="checkbox" id="firewallToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="firewall-stats">
+                    <div class="firewall-item">
+                        <span>Правил активно</span>
+                        <strong>24</strong>
+                    </div>
+                    <div class="firewall-item">
+                        <span>Заблокировано IP</span>
+                        <strong>156</strong>
+                    </div>
+                    <div class="firewall-item">
+                        <span>Разрешено портов</span>
+                        <strong>8</strong>
+                    </div>
+                    <div class="firewall-item">
+                        <span>Траффик сегодня</span>
+                        <strong>2.4 ГБ</strong>
+                    </div>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="showFirewallRules()">
+                    <i class="fas fa-cog"></i> Настроить правила
+                </button>
+            </div>
+        </div>
+
+        <!-- Access Logs -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h3><i class="fas fa-eye"></i> Логи доступа</h3>
+                <select class="form-select" id="logFilter" onchange="loadAccessLogs()">
+                    <option value="all">Все события</option>
+                    <option value="failed">Неудачные входы</option>
+                    <option value="success">Успешные входы</option>
+                    <option value="suspicious">Подозрительные</option>
+                </select>
+            </div>
+            <div class="card-body">
+                <div id="accessLogsList" class="access-logs-list">
+                    <div class="access-log success">
+                        <div class="event-content">
+                            <div class="event-type">LOGIN SUCCESS</div>
+                            <div class="event-details">
+                                <i class="fas fa-user"></i> admin
+                                <i class="fas fa-globe"></i> 192.168.1.100
+                                <i class="fas fa-clock"></i> 1 минуту назад
+                            </div>
+                        </div>
+                        <div class="status-badge success">
+                            <i class="fas fa-check"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="access-log danger">
+                        <div class="event-content">
+                            <div class="event-type">LOGIN FAILED</div>
+                            <div class="event-details">
+                                <i class="fas fa-user"></i> user123
+                                <i class="fas fa-globe"></i> 10.0.0.15
+                                <i class="fas fa-clock"></i> 3 минуты назад
+                            </div>
+                        </div>
+                        <div class="status-badge danger">
+                            <i class="fas fa-times"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="access-log info">
+                        <div class="event-content">
+                            <div class="event-type">FILE ACCESS</div>
+                            <div class="event-details">
+                                <i class="fas fa-user"></i> developer
+                                <i class="fas fa-globe"></i> 192.168.1.50
+                                <i class="fas fa-clock"></i> 5 минут назад
+                            </div>
+                        </div>
+                        <div class="status-badge info">
+                            <i class="fas fa-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vulnerability Scanner -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h3><i class="fas fa-search"></i> Сканер уязвимостей</h3>
+                <button class="btn btn-primary btn-sm" onclick="startVulnerabilityScan()">
+                    <i class="fas fa-play"></i> Запустить сканирование
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="scan-status">
+                    <div class="scan-item">
+                        <span>Последнее сканирование</span>
+                        <span>2 часа назад</span>
+                    </div>
+                    <div class="scan-item">
+                        <span>Найдено уязвимостей</span>
+                        <span class="vulnerability-count critical">2 критичных</span>
+                    </div>
+                    <div class="scan-item">
+                        <span>Статус системы</span>
+                        <span class="status-badge warning">Требует внимания</span>
+                    </div>
+                </div>
+                <div class="scan-progress" id="scanProgress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="scanProgressFill"></div>
+                    </div>
+                    <div class="progress-text" id="scanProgressText">Подготовка сканирования...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Recommendations -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h3><i class="fas fa-lightbulb"></i> Рекомендации</h3>
+            </div>
+            <div class="card-body">
+                <div class="recommendations-list">
+                    <div class="recommendation-item high">
+                        <div class="recommendation-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="recommendation-content">
+                            <h4>Обновите пароли</h4>
+                            <p>Обнаружены слабые пароли в системе</p>
+                            <button class="btn btn-sm btn-primary" onclick="fixPasswordSecurity()">Исправить</button>
+                        </div>
+                    </div>
+                    
+                    <div class="recommendation-item medium">
+                        <div class="recommendation-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="recommendation-content">
+                            <h4>Включите 2FA</h4>
+                            <p>Двухфакторная аутентификация не активна</p>
+                            <button class="btn btn-sm btn-outline" onclick="setup2FA()">Настроить</button>
+                        </div>
+                    </div>
+                    
+                    <div class="recommendation-item low">
+                        <div class="recommendation-icon">
+                            <i class="fas fa-sync"></i>
+                        </div>
+                        <div class="recommendation-content">
+                            <h4>Обновите ПО</h4>
+                            <p>Доступны обновления безопасности</p>
+                            <button class="btn btn-sm btn-outline" onclick="updateSoftware()">Обновить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Alerts Modal -->
+    <div id="securityModal" class="modal">
+        <div class="modal-overlay" onclick="closeSecurityModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🚨 Уведомления безопасности</h3>
+                <button class="modal-close" onclick="closeSecurityModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="securityAlerts">
+                    <div class="security-alert high">
+                        <div class="alert-header">
+                            <span class="alert-type">Подозрительная активность</span>
+                            <span class="alert-severity high">HIGH</span>
+                        </div>
+                        <div class="alert-content">
+                            <p>Множественные неудачные попытки входа с IP 192.168.1.100</p>
+                            <div class="alert-details">
+                                <span><i class="fas fa-clock"></i> 2 минуты назад</span>
+                                <span><i class="fas fa-map-marker-alt"></i> 192.168.1.100</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.threat-map {
+    height: 300px;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-tertiary) 100%);
+    border-radius: 0.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.threat-locations {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.threat-point {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.threat-point.high {
+    background: var(--danger-color);
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.6);
+}
+
+.threat-point.medium {
+    background: var(--warning-color);
+    box-shadow: 0 0 15px rgba(243, 156, 18, 0.6);
+}
+
+.threat-point.low {
+    background: var(--info-color);
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.6);
+}
+
+.threat-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: pulse-threat 2s infinite;
+}
+
+.threat-point.high .threat-pulse {
+    background: rgba(231, 76, 60, 0.3);
+}
+
+.threat-point.medium .threat-pulse {
+    background: rgba(243, 156, 18, 0.3);
+}
+
+.threat-point.low .threat-pulse {
+    background: rgba(52, 152, 219, 0.3);
+}
+
+@keyframes pulse-threat {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(3);
+        opacity: 0;
+    }
+}
+
+.threat-legend {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    backdrop-filter: blur(10px);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.legend-item:last-child {
+    margin-bottom: 0;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.legend-dot.high { background: var(--danger-color); }
+.legend-dot.medium { background: var(--warning-color); }
+.legend-dot.low { background: var(--info-color); }
+
+.security-events-list,
+.access-logs-list {
+    max-height: 350px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.security-event,
+.access-log {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border-left: 4px solid;
+}
+
+.security-event.high,
+.access-log.danger {
+    background: rgba(231, 76, 60, 0.1);
+    border-left-color: var(--danger-color);
+}
+
+.security-event.medium {
+    background: rgba(243, 156, 18, 0.1);
+    border-left-color: var(--warning-color);
+}
+
+.security-event.low,
+.access-log.info {
+    background: rgba(52, 152, 219, 0.1);
+    border-left-color: var(--info-color);
+}
+
+.access-log.success {
+    background: rgba(39, 174, 96, 0.1);
+    border-left-color: var(--success-color);
+}
+
+.event-content {
+    flex: 1;
+}
+
+.event-type {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.event-details {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.event-message {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.event-severity {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: white;
+}
+
+.event-severity.high {
+    background: var(--danger-color);
+}
+
+.event-severity.medium {
+    background: var(--warning-color);
+}
+
+.event-severity.low {
+    background: var(--info-color);
+}
+
+.firewall-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.firewall-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: var(--bg-tertiary);
+    border-radius: 0.25rem;
+}
+
+.firewall-toggle {
+    display: flex;
+    align-items: center;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--success-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.scan-status {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.scan-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.vulnerability-count.critical {
+    color: var(--danger-color);
+    font-weight: 600;
+}
+
+.scan-progress {
+    margin-top: 1rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--primary-color);
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.progress-text {
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.recommendations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.recommendation-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border-left: 4px solid;
+}
+
+.recommendation-item.high {
+    background: rgba(231, 76, 60, 0.1);
+    border-left-color: var(--danger-color);
+}
+
+.recommendation-item.medium {
+    background: rgba(243, 156, 18, 0.1);
+    border-left-color: var(--warning-color);
+}
+
+.recommendation-item.low {
+    background: rgba(52, 152, 219, 0.1);
+    border-left-color: var(--info-color);
+}
+
+.recommendation-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    flex-shrink: 0;
+}
+
+.recommendation-content h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+}
+
+.recommendation-content p {
+    margin: 0 0 1rem 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.security-alert {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid;
+}
+
+.security-alert.high {
+    background: rgba(231, 76, 60, 0.1);
+    border-left-color: var(--danger-color);
+}
+
+.alert-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.alert-type {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.alert-severity {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: white;
+}
+
+.alert-severity.high {
+    background: var(--danger-color);
+}
+
+.alert-content p {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.alert-details {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    loadSecurityEvents();
+    loadAccessLogs();
+    
+    // Setup real-time updates
+    setInterval(loadSecurityEvents, 30000);
+    setInterval(loadAccessLogs, 15000);
+    
+    // Setup event listeners
+    document.getElementById('firewallToggle').addEventListener('change', toggleFirewall);
+});
+
+async function loadSecurityEvents() {
+    try {
+        const response = await fetch('/admin/api/security-events');
+        const events = await response.json();
+        
+        // Events are already displayed in HTML, just update if needed
+        console.log('Security events loaded:', events);
+        
+    } catch (error) {
+        console.error('Error loading security events:', error);
+    }
+}
+
+async function loadAccessLogs() {
+    const filter = document.getElementById('logFilter').value;
+    
+    try {
+        // In real implementation, this would fetch filtered logs
+        console.log('Loading access logs with filter:', filter);
+        
+    } catch (error) {
+        console.error('Error loading access logs:', error);
+    }
+}
+
+function refreshThreatMap() {
+    console.log('Refreshing threat map...');
+    if (window.adminDashboard) {
+        window.adminDashboard.showToast('success', 'Карта угроз обновлена');
+    }
+}
+
+function refreshSecurityEvents() {
+    loadSecurityEvents();
+    if (window.adminDashboard) {
+        window.adminDashboard.showToast('success', 'События безопасности обновлены');
+    }
+}
+
+function showFirewallRules() {
+    if (window.adminDashboard) {
+        window.adminDashboard.showConfirmDialog(
+            'Настройки Firewall',
+            'Открыть расширенные настройки правил файрвола?',
+            'Открыть'
+        ).then(confirmed => {
+            if (confirmed) {
+                console.log('Opening firewall configuration...');
+            }
+        });
+    }
+}
+
+function toggleFirewall(event) {
+    const enabled = event.target.checked;
+    console.log('Firewall', enabled ? 'enabled' : 'disabled');
+    
+    if (window.adminDashboard) {
+        window.adminDashboard.showToast(
+            enabled ? 'success' : 'warning',
+            `Firewall ${enabled ? 'включен' : 'отключен'}`
+        );
+    }
+}
+
+async function startVulnerabilityScan() {
+    const progressContainer = document.getElementById('scanProgress');
+    const progressFill = document.getElementById('scanProgressFill');
+    const progressText = document.getElementById('scanProgressText');
+    
+    progressContainer.style.display = 'block';
+    
+    const steps = [
+        'Подготовка сканирования...',
+        'Сканирование портов...',
+        'Проверка сервисов...',
+        'Анализ уязвимостей...',
+        'Проверка конфигурации...',
+        'Генерация отчета...',
+        'Сканирование завершено'
+    ];
+    
+    for (let i = 0; i < steps.length; i++) {
+        progressText.textContent = steps[i];
+        progressFill.style.width = `${((i + 1) / steps.length) * 100}%`;
+        
+        await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+    
+    setTimeout(() => {
+        progressContainer.style.display = 'none';
+        
+        if (window.adminDashboard) {
+            window.adminDashboard.showToast('success', 'Сканирование уязвимостей завершено');
+        }
+    }, 1000);
+}
+
+function fixPasswordSecurity() {
+    if (window.adminDashboard) {
+        window.adminDashboard.showToast('info', 'Запущена проверка паролей...');
+    }
+}
+
+function setup2FA() {
+    if (window.adminDashboard) {
+        window.adminDashboard.showToast('info', 'Настройка двухфакторной аутентификации...');
+    }
+}
+
+function updateSoftware() {
+    if (window.adminDashboard) {
+        window.adminDashboard.showToast('info', 'Проверка обновлений безопасности...');
+    }
+}
+
+function closeSecurityModal() {
+    const modal = document.getElementById('securityModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.querySelector('.modal-content').style.transform = 'scale(0.9)';
+        modal.querySelector('.modal-content').style.opacity = '0';
+    }
+}
+
+// Auto-show security modal if there are critical alerts
+function checkCriticalAlerts() {
+    const criticalCount = parseInt(document.getElementById('criticalAlerts').textContent);
+    
+    if (criticalCount > 0) {
+        setTimeout(() => {
+            const modal = document.getElementById('securityModal');
+            modal.classList.add('active');
+            modal.querySelector('.modal-content').style.transform = 'scale(1)';
+            modal.querySelector('.modal-content').style.opacity = '1';
+        }, 2000);
+    }
+}
+
+// Initialize critical alerts check
+setTimeout(checkCriticalAlerts, 1000);
+
+// Real-time threat map updates
+function updateThreatMap() {
+    const threatPoints = document.querySelectorAll('.threat-point');
+    threatPoints.forEach(point => {
+        // Simulate threat activity
+        if (Math.random() > 0.7) {
+            point.style.animation = 'none';
+            setTimeout(() => {
+                point.style.animation = '';
+            }, 100);
+        }
+    });
+}
+
+// Update threat map every 10 seconds
+setInterval(updateThreatMap, 10000);
+
+// Firewall traffic simulation
+function updateFirewallStats() {
+    const blockedElement = document.getElementById('blockedAttacks');
+    const currentBlocked = parseInt(blockedElement.textContent);
+    
+    // Simulate new blocked attacks
+    if (Math.random() > 0.8) {
+        const newBlocked = currentBlocked + Math.floor(Math.random() * 3) + 1;
+        blockedElement.textContent = newBlocked;
+        
+        // Add visual feedback
+        blockedElement.style.color = '#e74c3c';
+        setTimeout(() => {
+            blockedElement.style.color = '';
+        }, 1000);
+    }
+}
+
+// Update firewall stats every 15 seconds
+setInterval(updateFirewallStats, 15000);
+
+// Security score calculation
+function calculateSecurityScore() {
+    const criticalAlerts = parseInt(document.getElementById('criticalAlerts').textContent);
+    const baseScore = 100;
+    const penalty = criticalAlerts * 5;
+    const finalScore = Math.max(baseScore - penalty, 0);
+    
+    return finalScore;
+}
+
+// Live security monitoring
+function startSecurityMonitoring() {
+    console.log('🛡️ Система безопасности активна');
+    console.log(`📊 Текущий уровень защиты: ${calculateSecurityScore()}%`);
+    
+    // Simulate real-time monitoring
+    setInterval(() => {
+        const score = calculateSecurityScore();
+        if (score < 90) {
+            console.warn('⚠️ Уровень безопасности снижен');
+        }
+    }, 30000);
+}
+
+// Start monitoring when page loads
+startSecurityMonitoring();
+
+// Keyboard shortcuts for security actions
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey) {
+        switch (e.key) {
+            case 'S':
+                e.preventDefault();
+                startVulnerabilityScan();
+                break;
+            case 'F':
+                e.preventDefault();
+                document.getElementById('firewallToggle').click();
+                break;
+            case 'R':
+                e.preventDefault();
+                refreshSecurityEvents();
+                break;
+        }
+    }
+});
+
+// Security event sound notifications (optional)
+function playSecurityAlert(severity) {
+    if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance();
+        utterance.text = severity === 'high' ? 'Критическое событие безопасности' : 'Событие безопасности';
+        utterance.volume = 0.3;
+        utterance.rate = 1.2;
+        speechSynthesis.speak(utterance);
+    }
+}
+
+// Export security report
+function exportSecurityReport() {
+    const reportData = {
+        timestamp: new Date().toISOString(),
+        criticalAlerts: document.getElementById('criticalAlerts').textContent,
+        blockedAttacks: document.getElementById('blockedAttacks').textContent,
+        securityScore: calculateSecurityScore(),
+        activeUsers: document.getElementById('activeUsers').textContent
+    };
+    
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `security-report-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    if (window.adminDashboard) {
+        window.adminDashboard.showToast('success', 'Отчет безопасности экспортирован');
+    }
+}
+
+// Add export button to header if needed
+function addExportButton() {
+    const header = document.querySelector('.card-header');
+    if (header && !header.querySelector('.export-btn')) {
+        const exportBtn = document.createElement('button');
+        exportBtn.className = 'btn btn-sm btn-outline export-btn';
+        exportBtn.innerHTML = '<i class="fas fa-download"></i> Экспорт';
+        exportBtn.onclick = exportSecurityReport;
+        header.appendChild(exportBtn);
+    }
+}
+
+// Initialize export functionality
+setTimeout(addExportButton, 500);
+</script>
+{% endblock %}

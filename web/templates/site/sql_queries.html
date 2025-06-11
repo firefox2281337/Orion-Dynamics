@@ -1,0 +1,893 @@
+{% extends 'site/base.html' %}
+
+{% block title %}SQL Запросы{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="sql-editor-card animate-scale-in">
+        <div class="card-header">
+            <h1>
+                <i class="fas fa-database"></i> SQL Редактор
+            </h1>
+        </div>
+        
+        <div class="card-body">
+            <div class="tab-buttons animate-fade-in">
+                <button class="tab-button active" data-tab="editor">
+                    <i class="fas fa-code"></i> Редактор
+                </button>
+                <button class="tab-button" data-tab="results">
+                    <i class="fas fa-table"></i> Результаты
+                </button>
+                <button class="tab-button" data-tab="history">
+                    <i class="fas fa-history"></i> История
+                </button>
+            </div>
+
+            <div id="editor-tab" class="tab-content animate-slide-in" style="display: block;">
+                <div class="form-group mb-4">
+                    <label for="db-select" class="form-label">
+                        <i class="fas fa-server"></i> Выберите базу данных:
+                    </label>
+                    <select class="form-select" id="db-select">
+                        <option value="" disabled selected>Выберите базу данных...</option>
+                    </select>
+                </div>
+
+                <div class="preset-queries mb-4">
+                    <button class="btn btn-outline w-100 d-flex justify-content-between align-items-center" id="preset-toggle">
+                        <span><i class="fas fa-bookmark"></i> Шаблоны запросов</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="preset-dropdown" id="preset-dropdown">
+                        <div class="preset-item" data-query="IF OBJECT_ID('tempdb.dbo.#first', 'U') IS NOT NULL DROP TABLE #first
+SELECT 
+    [OTDEL_ID] as [Код филиала]
+    ,f.NA_OTD as [Наименование филиала]
+    ,[d_zakl] as [Дата заключения]
+    ,[D_START] as [Дата начала действия договора]
+    ,[D_END] as [Дата окончания действия договора]
+    ,[NUM_DOG] as [Номер договора к пролонгации]
+    ,a.dog_in_id
+    ,a.dog_in_new
+    ,[INSURANCETYPE_TO_PL] as [Вид страхования]
+    ,tc.div_name_corr as [Подразделение]
+    ,s.SChannelNAme2015 as [Канал продаж]
+    ,[Наименование] as [Наименование страхователя]
+    ,[Адрес регистрации застрахованного объекта] as [Адрес]
+    ,[SUMMP_RBL] as [Страховая премия]
+    ,[prem_nach] as [Премия начисленная]
+    ,case when isnull([INN_Bank],0)=1 then 'Да' else 'Нет' end as [Признак Сбербанка]
+INTO #first
+FROM [Controlling].[dbo].[_control_prolong_ifl_ipoteka] a WITH (NOLOCK)
+    LEFT JOIN Accounting.._filial_list f WITH (NOLOCK) ON a.OTDEL_ID = f.filial_id
+    left join Controlling.._control_stage_komis_base pr with(nolock) on a.dog_in_new=pr.dog_in_id
+    left join Accounting.._info_translate_TC tc with(nolock) on a.DIMENSION_ZPP_2015=tc.TC_ax
+    left join Collected..vSalesChannels_SalesName s with(nolock) on a.SALESCHANNELID=s.Saleschannelid
+    left join [Controlling].[dbo]._control_dimension_vsk_insprogram_ad i with(nolock) on a.InsPrgId=i.NSI_CODE
+
+
+WHERE NUM_DOG IN (
+    '23260MIP9960000832', 
+    '24260IPE9960000219' -- Замените на нужные номера договоров через запятую (строковые значения), без последней запятой 
+)
+
+
+IF OBJECT_ID('tempdb.dbo.#prolongHistory', 'U') IS NOT NULL DROP TABLE #prolongHistory
+CREATE TABLE #prolongHistory
+(
+    dog_in_id VARCHAR(33) NOT NULL,
+    dog_in_id_old VARCHAR(33) NULL,
+    d_beg_otv DATETIME NOT NULL,
+    d_end_otv DATETIME NOT NULL
+)
+
+
+INSERT INTO #prolongHistory
+SELECT 
+    v.dog_in_id,
+    CAST(NULL AS VARCHAR(33)) AS dog_in_id_old,
+    v.[Дата начала действия договора],
+    v.[Дата окончания действия договора]
+FROM #first v
+
+
+DECLARE @SQL NVARCHAR(MAX)
+DECLARE @tableName NVARCHAR(255) = 'Controlling.dbo._control_prolong_ifl_ipoteka'
+
+
+SET @SQL = '
+INSERT INTO #prolongHistory
+SELECT 
+    a1.dog_in_id,
+    a2.dog_in_id,
+    a2.d_beg_otv,
+    a2.d_end_otv
+FROM #prolongHistory a1
+INNER JOIN ' + @tableName + ' a2 WITH (NOLOCK) ON a2.dog_in_new = a1.dog_in_id AND a1.d_beg_otv <> a2.d_beg_otv
+'
+EXEC (@SQL)
+
+
+DECLARE @i INT = 1
+WHILE @i > 0
+BEGIN
+    SET @SQL = '
+    INSERT INTO #prolongHistory
+    SELECT 
+        a1.dog_in_id,
+        a2.dog_in_id,
+        a2.d_beg_otv,
+        a2.d_end_otv
+    FROM #prolongHistory a1
+    INNER JOIN ' + @tableName + ' a2 WITH (NOLOCK) ON a2.dog_in_new = a1.dog_in_id_old AND a1.dog_in_id_old IS NOT NULL
+    WHERE NOT EXISTS (SELECT 1 FROM #prolongHistory a WHERE a.dog_in_id_old = a2.dog_in_id)
+    '
+    EXEC (@SQL)
+    SET @i = @@ROWCOUNT
+END
+
+
+IF OBJECT_ID('tempdb.dbo.#prolongYear', 'U') IS NOT NULL DROP TABLE #prolongYear
+SELECT 
+    dog_in_id,
+    YEARS = DATEDIFF(YEAR, MIN(d_beg_otv), MAX(d_beg_otv))
+INTO #prolongYear
+FROM #prolongHistory
+GROUP BY dog_in_id
+DROP TABLE #prolongHistory
+
+
+SELECT
+    [Номер договора к пролонгации],
+    [Вид страхования],
+    [Наименование филиала],
+    [Канал продаж],
+    [Адрес],
+    [Страховая премия],
+    [Премия начисленная],
+    [Признак Сбербанка],
+    [Срок жизни договора] = CASE WHEN a1.dog_in_new IS NOT NULL THEN a2.YEARS + 2 ELSE a2.YEARS + 1 END
+FROM #first a1
+LEFT JOIN #prolongYear a2 ON a2.dog_in_id = a1.dog_in_id;" data-database="ACTUAR2">
+                            <div class="preset-item-name">Ипотека ACTUAR2</div>
+                            <div class="preset-item-desc">Получить столбцы Вид страхования, филиал, канал, адрес, премию, сумму, вид полиса и др. по номеру договора</div>
+                        </div>
+                                                <div class="preset-item" data-query="use Controlling
+
+
+declare @period_s nvarchar(8),@period_po nvarchar(8)
+set @period_s='2025_02' -- ЗАДАТЬ НАЧАЛО ПЕРИОДА ВЫГРУЗКИ
+set @period_po='2025_02' -- ЗАДАТЬ КОНЕЦ ПЕРИОДА ВЫГРУЗКИ
+
+
+-----------------------------------------------------------------------
+IF OBJECT_ID('tempdb.dbo.#prolong', 'U') IS NOT NULL DROP TABLE #prolong
+    select *
+into #prolong
+from [Controlling].[dbo].[_prolong_auto_base_new_ad] pn with(nolock) 
+
+
+where yyyy_mm between @period_s and @period_po and [База для пролонгации]<>0
+and вид in ('0') 
+and pn.Saleschannelid_2015 in ('407')
+and [Код филиала] in ('0000','0001',
+'0002','0003','0004','0005','0008','0009','0011','0012','0013','0014','0015','0016','0018','0019','0020','0021','0022','0025','0026','0027','0028','0029','0032','0033','0034','0035','0036','0037',
+'0038','0042','0044','0045','0047','0048','0049','0051','0053','0054','0055','0056','0057','0059','0061','0063','0064','0067','0068','0069','0070','0071','0072','0073','0074','0075','0076','0077','0078',
+'0079','0081','0082','0083','0084','0085','0089','0091','0204','0211','0214','0216','0217','0225','0226','0228','0249','0252','0262')
+
+
+declare @d_start_kot datetime,@d_end_kot datetime
+set @d_start_kot=dateadd(day,-60,(select MIN(d.PK_Date) from Accounting.._config_DimTime d with(nolock) where yyyy_mm=@period_s))
+set @d_end_kot=dateadd(day,60,(select Max(d.PK_Date) from Accounting.._config_DimTime d with(nolock) where yyyy_mm=@period_po))
+
+
+IF OBJECT_ID('tempdb.dbo.#d_osago', 'U') IS NOT NULL DROP TABLE #d_osago
+
+
+select p.PriorPolicyNumber, p.Numbar, p.name, p.Premium,CreationTime,
+    DENSE_RANK() over (partition by p.PriorPolicyNumber order by p.[Priority],
+    p.CreationTime desc,Numbar desc) as rank
+into #d_osago
+from (
+
+
+select k.PriorPolicyNumber,
+    case 
+        when k.Name = 'Действующий' then 1
+        when k.Name = 'Проект' then 2
+        when k.Name = 'Согласован' then 3
+        when k.Name = 'Согласован с замечаниями' then 4
+        when k.Name = 'В рассмотрении' then 5
+        when k.Name = 'Не согласован' then 6
+        when k.Name = 'Аннулирован' then 7
+        end as [Priority],
+        k.Numbar,
+        k.name, 
+        k.Premium,
+        k.CreationTime
+        from Collected.dbo.v_ReportOsago k
+        where isnull(k.PriorPolicyNumber, '') <> ''
+        and k.EffectiveDate between @d_start_kot and @d_end_kot
+        ) p
+
+
+IF OBJECT_ID('tempdb.dbo.#d_osago_cur', 'U') IS NOT NULL DROP TABLE #d_osago_cur
+select 
+    d.PriorPolicyNumber
+    ,d.Numbar
+    ,d.name
+    ,d.Premium
+    ,min(b.CreationTime) as CreationTime 
+into #d_osago_cur
+from #d_osago d
+inner join #d_osago b on d.PriorPolicyNumber=b.PriorPolicyNumber
+where d.rank = 1
+group by 
+    d.PriorPolicyNumber
+    ,d.Numbar
+    ,d.name
+    ,d.Premium
+
+
+IF OBJECT_ID('tempdb.dbo.#d_kasko', 'U') IS NOT NULL DROP TABLE #d_kasko
+
+
+select p.PreviousPolicyNumber, p.Numbar, p.name, p.Premium, p.CreationTime,
+    DENSE_RANK() over (partition by p.PreviousPolicyNumber order by p.[Priority],
+    p.CreationTime desc,Numbar desc) as rank
+into #d_kasko
+from (
+
+
+select k.PreviousPolicyNumber,
+    case 
+        when k.Name = 'Действующий' then 1
+        when k.Name = 'Проект' then 2
+        when k.Name = 'Согласован' then 3
+        when k.Name = 'Согласован с замечаниями' then 4
+        when k.Name = 'В рассмотрении' then 5
+        when k.Name = 'Не согласован' then 6
+        when k.Name = 'Аннулирован' then 7
+        end as Priority,
+        k.Numbar,
+        k.name, 
+        k.Premium,
+        k.CreationTime
+        from Collected.dbo.v_ReportKasko k
+        where isnull(k.PreviousPolicyNumber, '') <> ''
+        and k.EffectiveDate between @d_start_kot and @d_end_kot
+        ) p
+
+
+IF OBJECT_ID('tempdb.dbo.#d_kasko_cur', 'U') IS NOT NULL DROP TABLE #d_kasko_cur
+select 
+    d.PreviousPolicyNumber
+    ,d.Numbar
+    ,d.name
+    ,d.Premium
+    ,min(b.CreationTime) as CreationTime 
+into #d_kasko_cur
+from #d_kasko d
+inner join #d_kasko b on d.PreviousPolicyNumber=b.PreviousPolicyNumber
+where d.rank = 1
+group by 
+    d.PreviousPolicyNumber
+    ,d.Numbar
+    ,d.name
+    ,d.Premium
+
+
+drop table #d_osago,#d_kasko
+
+
+IF OBJECT_ID('tempdb.dbo.#num_prol', 'U') IS NOT NULL DROP TABLE #num_prol
+    select [номер договора к пролонгации] 
+into #num_prol
+from #prolong
+    group by [номер договора к пролонгации]
+
+
+IF OBJECT_ID('tempdb.dbo.#ReCalcPolicy', 'U') IS NOT NULL DROP TABLE #ReCalcPolicy
+    select r.* 
+into #ReCalcPolicy
+from #num_prol n
+inner join controlling.dbo.ReCalcPolicy r with(nolock) on n.[номер договора к пролонгации]=r.number 
+
+
+IF OBJECT_ID('tempdb.dbo.#strah_ifl', 'U') IS NOT NULL DROP TABLE #strah_ifl
+    select strach_id
+into #strah_ifl
+from #prolong d
+INNER join Controlling.._control_dimension_dog_in_ad (nolock) dd on d.dog_old=dd.dog_In_id
+    group by strach_id
+
+
+IF OBJECT_ID('tempdb.dbo.#gold_cart', 'U') IS NOT NULL DROP TABLE #gold_cart
+select
+    d.strach_id
+    ,g1.mdm_id
+into #gold_cart
+from #strah_ifl d
+inner join Publisher..v_mdd_src_customer_binding cs with(nolock) on d.strach_id = cs.strach_id
+inner join Publisher..v_MDD_DBO_CUSTOMER   g1 with(nolock) on cs.mdm_id   = g1.mdm_id
+group by
+    d.strach_id
+    ,g1.mdm_id
+
+
+IF OBJECT_ID('tempdb.dbo.#prolong_vivod', 'U') IS NOT NULL DROP TABLE #prolong_vivod
+CREATE TABLE #prolong_vivod(
+    [Филиал] [varchar](80) NULL,
+    [div_name_corr] [nvarchar](255) NULL,
+    [Холдинг] [nvarchar](255) NULL,
+    [вид] [varchar](1) NULL,
+    [yyyy_mm] [nvarchar](33) NULL,
+    [Дата начала базового договора] [date] NULL,
+    [Дата окончания базового договора] [date] NULL,
+    [Дата окончания ответственности] [datetime] NULL,
+    [Статус по КБД] [varchar](1) null,
+    [Статус по WEB] [varchar](11) NULL,
+    [номер договора к пролонгации] [nvarchar](30) null,
+    [Наименование страхователя] [nvarchar](500) NULL,
+    [Страхователь, контакты] [varchar](254) NULL,
+    [Адрес Страхователя] [varchar](4000) NULL,
+    [Объект] [nvarchar](778) NULL,
+    [Предварительный Класс Страхователя] [nvarchar](250) null,
+    [Возможность применения СППГ(отсутствие убытка)] [varchar](16) null,
+    [Наличие рассрочки в договоре] [varchar](256) null,
+    [Тип Франшизы] [nvarchar](256) null,
+    [Франшиза] [int] null,
+    [Выгодоприобретатели] [varchar](256) NULL,
+    [Скидка с КВ, %] [int] NULL,
+    [Наименование ЛизингоПолучателя] [varchar](255) NULL,
+    [Адрес ЛизингоПолучателя] [nvarchar](max) NULL,
+    [ЮЛКП] [varchar](255) null,
+    [Премия прошлого года] [numeric](38, 12) NULL,
+    [Премия прошлого года по доп. продуктам] [numeric](16, 4) NULL,
+    [Перечень доп. продуктов] [varchar](6) NULL,
+    [количество случаев] [int] NULL,
+    [сумма выплат] [decimal](17, 2) NULL,
+    [Новый номер договора] [nvarchar](30) NULL
+    ,[Дата начала действия договора нового] [date] NULL
+    ,[Дата окончания действия договора нового] [date] NULL
+    ,[Премия нового договора] numeric(18,2)
+    ,[Точка продаж] nvarchar (255) null
+    ,[НСИ агента из КБД] nvarchar (255) null
+    ,[Агент из КБД] nvarchar (255) null
+    ,[ФИО ответственного  за договор] nvarchar (255) null
+    ,[Продукт] nvarchar (255) null
+    ,VIN nvarchar (255) null
+    ,ПТС nvarchar (255) null
+    ,[Возраст лиц(младшего)] nvarchar (30) null
+    ,[Стаж вождения (минимальный)] nvarchar (30) null
+    ,[Страховая сумма по действующему договору] float null
+    ,[Телефон страхователя (убытки)] nvarchar(4000) null
+    ,[Канал продаж договора к пролонгации] nvarchar(255) null
+    ,[Канал продаж нового договора] nvarchar(255) null
+    ,[Сегмент на Пролонгацию] nvarchar(15) null
+    ,[Результат Пролонгации (по КБД)] nvarchar(15) null
+    ,[МОАП] nvarchar(255) null
+    ,[Гос. номер ТС] nvarchar(255) null
+    ,[Номер котировки] nvarchar(255)
+    ,[Премия котировки] numeric(28,4)
+    ,[Статус котировки] nvarchar(255)
+    ,[Дата котировки] date
+    ,dog_new nvarchar(33)
+    ,isReInsPoolOld INT NULL
+    ,isReInsPoolNew INT NULL
+    ,MDM_ID BIGINT
+) ON [PRIMARY]
+
+
+
+
+
+insert into #prolong_vivod
+select 
+    a.Филиал
+    ,tc.div_name_corr
+    ,[Холдинг]=case when a.Холдинг is null or a.Холдинг='Без Холдинга' then ag.name_ag else a.Холдинг end
+    ,вид
+    ,yyyy_mm
+    ,a.[Дата начала базового договора]
+    ,[Дата окончания базового договора]
+    ,[Дата окончания ответственности]
+    ,[Статус по КБД]=''
+    ,[Статус по WEB]= case  when c.DocumentStatusID = 'CA791971-3028-47BD-8C49-94582E21F6B8' then 'Проект'
+                            when c.DocumentStatusID = '0C9468DD-F53C-4962-8B0B-93BF28ABA6A9' then 'Действующий'
+                            when c.DocumentStatusID = 'FFE17B47-6238-4DFD-B3ED-FCA4104A39EE' then 'Аннулирован' 
+                        end
+    ,[номер договора к пролонгации]
+    ,[Наименование страхователя]=[Наименование страхователя]+'('+[Категория страхователя]+')'
+    ,[Страхователь, контакты]=isnull(a.[Телефон Страхователя],'')+case when not en.tlf is null then ' ('+en.tlf+')' else '' end
+    ,a.[Адрес Страхователя]
+    ,[Объект]=case when d.[Марка, модель ТС] ='Не определена Не определена' then isnull(d.Марка,'')+' '+ISNULL(d.Модель,'')+',Год выпуска-'+d.Год_выпуска else d.[Марка, модель ТС]+',Год выпуска-'+d.Год_выпуска end
+    ,isnull(InsuredClass,'нет инфо') as [Предварительный Класс Страхователя]
+    ,case when r.UbitkiKol = 0 THEN 'СППГ возможно' 
+    WHEN r.UbitkiKol IS NULL THEN 'нет данных' 
+    ELSE 'не возможно СППГ' 
+    END AS [Возможность применения СППГ(отсутствие убытка)]
+    ,isnull(PaymentPeriodicityName,'нет инфо') as [Наличие рассрочки в договоре]
+    ,isnull(FrType,'нет инфо') as [Тип Франшизы]
+    ,isnull(FrSize,0) as [Франшиза]
+    ,BeneficiaryName as [Выгодоприобретатели]
+    ,DiscountKV as [Скидка с КВ, %]
+    ,[Наименование ЛизингоПолучателя]
+    ,[Адрес ЛизингоПолучателя]
+    ,a.ЮЛКП
+    ,[Премия прошлого года] = [База для пролонгации]
+    ,isnull(PremiumGO,0)+isnull(PremiumNS,0) as [Премия прошлого года по доп. продуктам]
+    ,case   when ISNULL(PremiumGO,0)=0 and  ISNULL(PremiumNS,0)=0  then  'нет'
+            when ISNULL(PremiumGO,0)>0 and  ISNULL(PremiumNS,0)>0  then  'ГО, НС'
+            when ISNULL(PremiumGO,0)>0 then 'ГО'
+            when ISNULL(PremiumNS,0)>0 then 'НС' end as [Перечень доп. продуктов] 
+    ,a.[количество случаев]
+    ,a.[сумма выплат]
+    ,a.[Новый номер договора]
+    ,ddd.D_START as [Дата начала действия договора нового]
+    ,ddd.D_END as [Дата окончания действия договора нового]
+    ,a.премия as [Премия нового договора] 
+    ,a.[Точка продаж]
+    ,isnull(osa.[НСИ агента],ag.NSI_emploe) as [НСИ агента из КБД]
+    ,isnull(osa.Агент,ag.name_ag) as [Агент из КБД]
+    ,ee.fio as [ФИО ответственного  за договор]
+    ,c.VidPolicy as [Продукт]
+    ,a.VIN
+    ,d.ПТС
+    ,vir.[DriverAge] as [Возраст лиц(младшего)]
+    ,vir.[DriverExperience] as [Стаж вождения (минимальный)]
+    ,c.[SumInsured] as [Страховая сумма по действующему договору]
+    ,a.[Телефон страхователя (убытки)]
+    ,s.SChannelNAme2015 as [Канал продаж договора к пролонгации]
+    ,ss.SChannelNAme2015 as [Канал продаж нового договора]
+
+
+,case 
+        when os.[KVfuture] > 0 then 'Сегмент'
+            when os.[KVfuture] = 0 then 'НЕсегмент'
+            else ''
+        end [Сегмент на Пролонгацию],
+        case when dd.isProlong=1 then 'Пролонгирован' else Null end [Результат Пролонгации (по КБД)]
+    ,a.МОАП
+    ,d.[Гос. номер ТС]
+    ,isnull(oc.Numbar, kc.Numbar) as [Номер котировки]
+    ,isnull(oc.Premium, kc.Premium) as [Премия котировки]
+    ,isnull(oc.name, kc.name) as [Статус котировки]
+    ,isnull(oc.CreationTime, kc.CreationTime) as [Дата котировки]
+    ,dog_new
+    ,a.isReInsPoolOld
+    ,a.isReInsPoolNew
+    ,gc.mdm_id
+FROM #prolong (nolock) a
+left join Collected.dbo.PolicyRegistry (nolock) c on a.id_web=c.ID
+left join [Collected].[dbo].[VehicleInsuranceRegistry] vir with(nolock) on c.id=vir.id
+left join [Controlling].dbo._control_dimension_num_dog_obj_auto_ad (nolock) d on a.obj_old=d.object_id
+left join #ReCalcPolicy (nolock) r on a.[номер договора к пролонгации]=r.number 
+left join Controlling.._control_dimension_dog_in_ad (nolock) dd on a.dog_old=dd.dog_In_id
+left join Controlling.._control_dimension_e_osago_agent osa with(nolock) on dd.dog_in_ID=osa.policy_id
+left join Controlling.._control_dimension_agent_id_ad (nolock) ag on dd.agent_id=ag.AGENT_ID
+left join Controlling.._control_dimension_emploe_ad ee with(nolock) on dd.emploe_id=ee.EMPLOE_ID
+left join [Collected].[dbo].[vSalesChannels_SalesName]  s with(nolock) on dd.SALESCHANNELID=s.Saleschannelid
+left join Controlling.._control_dimension_dog_in_ad (nolock) ddd on a.dog_new=ddd.dog_In_id
+left join [Collected].[dbo].[vSalesChannels_SalesName]  ss with(nolock) on ddd.SALESCHANNELID=ss.Saleschannelid
+left join Controlling.._control_dimension_Strah_ad sss with(nolock) on dd.STRACH_ID=sss.STRACH_ID
+left join [Motor].[dbo].[report_control_osago] os with(nolock) on dd.dog_in_id=os.dog_in_id
+left join Controlling.._control_dimension_Strah_contacts_ad cds with(nolock) on sss.STRACH_ID=cds.STRACH_ID
+left join Controlling.dbo.enriched en with(nolock) on cds.recid=en.recid
+left join [Accounting].[dbo].[_info_translate_TC] tc with(nolock) on a.TC_corr_2015=tc.TC_corr
+left join #d_osago_cur oc on a.[номер договора к пролонгации] = oc.PriorPolicyNumber
+left join #d_kasko_cur kc on a.[номер договора к пролонгации] = kc.PreviousPolicyNumber
+left join #gold_cart gc ON gc.strach_id = dd.strach_id
+where sing_full is null
+group by
+    a.Филиал
+    ,tc.div_name_corr
+    ,case when a.Холдинг is null or a.Холдинг='Без Холдинга' then ag.name_ag else a.Холдинг end
+    ,вид
+    ,yyyy_mm
+    ,a.[Дата начала базового договора]
+    ,[Дата окончания базового договора]
+    ,[Дата окончания ответственности]
+    ,case   when c.DocumentStatusID = 'CA791971-3028-47BD-8C49-94582E21F6B8' then 'Проект'
+                                when c.DocumentStatusID = '0C9468DD-F53C-4962-8B0B-93BF28ABA6A9' then 'Действующий'
+                                when c.DocumentStatusID = 'FFE17B47-6238-4DFD-B3ED-FCA4104A39EE' then 'Аннулирован' 
+                        end
+    ,[номер договора к пролонгации]
+    ,[Наименование страхователя]+'('+[Категория страхователя]+')'
+    ,isnull(a.[Телефон Страхователя],'')+case when not en.tlf is null then ' ('+en.tlf+')' else '' end
+    ,a.[Адрес Страхователя]
+    ,case when d.[Марка, модель ТС] ='Не определена Не определена' then isnull(d.Марка,'')+' '+ISNULL(d.Модель,'')+',Год выпуска-'+d.Год_выпуска else d.[Марка, модель ТС]+',Год выпуска-'+d.Год_выпуска end
+    ,isnull(InsuredClass,'нет инфо') 
+    ,case when r.UbitkiKol = 0 THEN 'СППГ возможно' 
+        WHEN r.UbitkiKol IS NULL THEN 'нет данных' 
+        ELSE 'не возможно СППГ' 
+        END
+    ,isnull(PaymentPeriodicityName,'нет инфо') 
+    ,isnull(FrType,'нет инфо') 
+    ,isnull(FrSize,0) 
+    ,BeneficiaryName 
+    ,DiscountKV 
+    ,[Наименование ЛизингоПолучателя]
+    ,[Адрес ЛизингоПолучателя]
+    ,a.ЮЛКП
+    ,[База для пролонгации]
+    ,isnull(PremiumGO,0)+isnull(PremiumNS,0) 
+    ,case   when ISNULL(PremiumGO,0)=0 and  ISNULL(PremiumNS,0)=0  then  'нет'
+            when ISNULL(PremiumGO,0)>0 and  ISNULL(PremiumNS,0)>0  then  'ГО, НС'
+            when ISNULL(PremiumGO,0)>0 then 'ГО'
+            when ISNULL(PremiumNS,0)>0 then 'НС' end 
+    ,a.[количество случаев]
+    ,a.[сумма выплат]
+    ,a.[Новый номер договора]
+    ,ddd.D_START 
+    ,ddd.D_END 
+    ,a.премия 
+    ,a.[Точка продаж]
+    ,isnull(osa.[НСИ агента],ag.NSI_emploe) 
+    ,isnull(osa.Агент,ag.name_ag) 
+    ,ee.fio 
+    ,c.VidPolicy 
+    ,a.VIN
+    ,d.ПТС
+    ,vir.[DriverAge] 
+    ,vir.[DriverExperience] 
+    ,c.[SumInsured] 
+    ,a.[Телефон страхователя (убытки)]
+    ,s.SChannelNAme2015 
+    ,ss.SChannelNAme2015 
+    ,case 
+        when os.[KVfuture] > 0 then 'Сегмент'
+        when os.[KVfuture] = 0 then 'НЕсегмент'
+            else ''
+        end
+        ,case when dd.isProlong=1 then 'Пролонгирован' else Null end 
+    ,a.МОАП
+    ,d.[Гос. номер ТС]
+    ,isnull(oc.Numbar, kc.Numbar) 
+    ,isnull(oc.Premium, kc.Premium) 
+    ,isnull(oc.name, kc.name) 
+    ,isnull(oc.CreationTime, kc.CreationTime) 
+    ,dog_new
+    ,a.isReInsPoolOld
+    ,a.isReInsPoolNew
+    ,gc.mdm_id
+
+
+drop table #ReCalcPolicy,#prolong,#num_prol
+
+
+select 
+    [Филиал]
+    ,[div_name_corr]
+    ,[Холдинг]
+    ,[вид]
+    ,[yyyy_mm]
+    ,[Дата начала базового договора]
+    ,[Дата окончания базового договора]
+    ,[Статус по WEB]
+    ,[номер договора к пролонгации]
+    ,[Наименование страхователя]
+    ,[Объект]
+    ,[Премия прошлого года]
+    ,[Новый номер договора]
+    ,[Дата начала действия договора нового]
+    ,[Дата окончания действия договора нового]
+    ,[Премия нового договора]
+    ,[ФИО ответственного  за договор] 
+    ,[Продукт] 
+    ,VIN 
+    ,[Канал продаж договора к пролонгации] 
+    ,[Канал продаж нового договора] 
+    ,[Результат Пролонгации (по КБД)] 
+    ,[Гос. номер ТС] 
+    ,[Номер котировки] 
+    ,[Премия котировки] 
+    ,[Статус котировки] 
+    ,[Дата котировки] 
+    ,[Признак пул. Базовый договор] = isReInsPoolOld
+    ,[Признак пул. Пролонгация] = isReInsPoolNew
+    ,mdm_id
+from #prolong_vivod a
+left join Controlling.._control_stage_komis_base pr with(nolock) on a.dog_new=pr.dog_in_id" data-database="ACTUAR2">
+                            <div class="preset-item-name">ОСАГО КЗ ACTUAR2</div>
+                            <div class="preset-item-desc">Получить данные по ОСАГО КЗ с mdm_id</div>
+                        </div>
+                                                <div class="preset-item" data-query="WITH params AS (
+    SELECT
+        ARRAY[
+        '308124189', 
+        '433328813', 
+        '319055503'
+        ]::TEXT[] AS mdm_ids -- Замените на нужный список mdm_id через запятую (строковые значения), без последней запятой
+),
+mdm_ids_table AS (
+    SELECT unnest(mdm_ids) AS mdm_id
+    FROM params
+)
+SELECT
+    t1.mdm_id::BIGINT AS subject_master_id,
+    t2.passport,
+    t2.passport_issue_org,
+    t2.passport_issue_date,
+    t2.passport_kp
+FROM mdm_ids_table AS t1
+LEFT JOIN public._subject_master_fl_document AS t2
+    ON t1.mdm_id::BIGINT = t2.subject_master_id;" data-database="PostgreSQL">
+                            <div class="preset-item-name">Документы PostgreSQL</div>
+                            <div class="preset-item-desc">Получить паспортные данные клиента по mdm id</div>
+                        </div>
+                        <div class="preset-item" data-query="SELECT DOG, STATUS, PAY_DATE
+FROM ADINSURE_VSK.VSK_DOG_VISTAVLSCHETA
+
+WHERE (1 = 1)
+AND DOG in (
+'ХХХ0355841861',
+'23000CFI4440046489' -- Заменить номера договоров на свои
+)" data-database="Oracle">
+                            <div class="preset-item-name">Проверка сделок Oracle</div>
+                            <div class="preset-item-desc">Проверка сделок в Oracle по номеру договора</div>
+                        </div>
+                        <div class="preset-item" data-query="CREATE TEMP TABLE temp_contracts (contract_number VARCHAR);
+
+
+WITH contract_numbers_data AS (
+    SELECT UNNEST(ARRAY[
+        '24260IPE9960000233',
+        '24260IPA9960000149',
+        '24260IPA9960000136'
+    ]::VARCHAR[]) AS contract_number  -- Замените на нужные номера договоров через запятую (строковые значения), без последней запятой
+)
+INSERT INTO temp_contracts (contract_number)
+SELECT contract_number
+FROM contract_numbers_data;
+
+
+
+SELECT
+    t1.contract_number,
+    t3.strah_master_id AS mdm_id,
+    CASE WHEN c.phone_f = 100 THEN c.phone ELSE NULL END AS phone,
+    CASE WHEN c.phone_f = 100 THEN c.phone2 ELSE NULL END AS phone2,
+    CASE WHEN c.phone_f = 100 THEN c.email ELSE NULL END AS email,
+    CASE WHEN c.phone_f = 100 THEN c.email2 ELSE NULL END AS email2,
+    CASE WHEN c.phone_f = 100 THEN f.birth ELSE NULL END AS birth
+FROM temp_contracts AS t1
+LEFT JOIN public._ins_contract_by_number AS t2 ON t1.contract_number = t2.contract_number
+LEFT JOIN public._ins_contract AS t3 ON t2.contract_id = t3.contract_id
+LEFT JOIN public._subject_master_fl_contact AS c ON c.subject_master_id = t3.strah_master_id
+LEFT JOIN public._subject_master_fl AS f ON f.subject_master_id = t3.strah_master_id;" data-database="PostgreSQL">
+                            <div class="preset-item-name">Контактные данные PostgreSQL</div>
+                            <div class="preset-item-desc">Получить столбцы mdm id, номеров телефона, почт и даты рождения клиента по номеру договору</div>
+                        </div>
+                        <div class="preset-item" data-query="WITH params AS (
+    SELECT
+        ARRAY[
+        '308124189', 
+        '433328813', 
+        '319055503'
+        ]::TEXT[] AS mdm_ids -- Замените на нужный список mdm_id через запятую (строковые значения), без последней запятой
+),
+mdm_ids_table AS (
+    SELECT unnest(mdm_ids) AS mdm_id
+    FROM params
+)
+SELECT
+    t2.*
+FROM mdm_ids_table AS t1
+LEFT JOIN public._subject_master_fl_address AS t2
+    ON t1.mdm_id::BIGINT = t2.subject_master_id;" data-database="PostgreSQL">
+                            <div class="preset-item-name">Адреса PostgreSQL</div>
+                            <div class="preset-item-desc">Получить адреса клиента по mdm id</div>
+                        </div>
+                        <div class="preset-item" data-query="WITH params AS (
+    SELECT
+    '2023-01-01'::DATE AS start_date, -- дата начала YYYY-MM-DD
+    '2023-12-31'::DATE AS end_date, -- дата конца YYYY-MM-DD
+    ARRAY[
+    '123', '456', '789' --Вставить mdm_id
+    ]::BIGINT[] AS mdm_ids),
+
+
+mdm_ids_table AS (SELECT UNNEST(mdm_ids) AS mdm_id
+                FROM params),
+
+
+date_ranges AS (SELECT start_date, end_date
+                FROM params)
+
+
+SELECT
+    t1.mdm_id,
+    t2.contract_number,
+    t2.vid_char,
+    t2.contract_ins_prg_name,
+    t2.contract_channel_name,
+    t2.variant_branch_name,
+    t2.contract_z_date::DATE,
+    t2.variant_ins_sum,
+    t2.contract_ppr_sum
+FROM mdm_ids_table AS t1
+CROSS JOIN date_ranges
+LEFT JOIN _ins_contract AS t2
+    ON t1.mdm_id::BIGINT = t2.strah_master_id  -- Преобразуем mdm_id к типу BIGINT
+    AND date_ranges.start_date <= t2.contract_z_date::DATE
+    AND date_ranges.end_date >= t2.contract_z_date::DATE
+    AND t2.contract_termination_f = 0
+WHERE
+    t2.contract_ins_prg_name IN ('ОСАГО ФЛ', 'КАСКО Классика ФЛ', 'Комплексное ипотечное страхование', 'Медицина без границ')
+ORDER BY
+    t1.mdm_id,
+    t2.contract_z_date;" data-database="PostgreSQL">
+                            <div class="preset-item-name">Потеряшки PostgreSQL</div>
+                            <div class="preset-item-desc">Потеряшки по mdm id c:</div>
+                        </div>
+                        <div class="preset-item" data-query=";WITH RegisterKaskoSbor AS (
+SELECT distinct
+    p.[номер договора к пролонгации]        as [№ Договора К Пролонгации],
+    p.Филиал                                as [Филиал ВСК],
+    p.[Дата окончания ответственности]      as [Дата окончания страхования],
+    p.[Наименование страхователя]           as [ФИО],
+    p.[вид]                                 as [Вид страхования],
+    p.[Агент]                               as [Ответственный сотрудник Агент],
+    ba.numberAgD                            as [Номер агентского договора],
+    p.[канал]                               as [Канал],
+    p.VIN,
+    gc.mdm_id,
+    d.[Марка],
+    p.[Точка продаж],
+    d.[Модель],
+    p.[Код филиала],
+    p.[Год выпуска ТС],
+    b.[isContactCenter],
+    [Продукт] = c.VidPolicy,
+    [Ответственный сотрудник ЦО Филиала] = ee.fio,
+    [Прошлый период Страховая премия] = p.[База для пролонгации],
+    Объект =
+        CASE
+            WHEN d.[Марка, модель ТС] = 'Не определена Не определена'
+            THEN ISNULL(d.Марка, '') + ' ' + ISNULL(d.Модель, '') + ',Год выпуска-' + d.Год_выпуска
+            ELSE d.[Марка, модель ТС] + ',Год выпуска-' + d.Год_выпуска
+        END,
+    [Год пролонгации] =
+        CASE
+            WHEN ISNULL(yeOld.cntYears, 0) - 1 >= 3 THEN '3+'
+            ELSE CAST(ISNULL(yeOld.cntYears, 0) - 1 AS NVARCHAR(10))
+        END
+    ,dd.dog_in_ID as dog_old
+FROM [Controlling].[dbo].[_prolong_auto_base_new_ad] p WITH(NOLOCK)
+LEFT JOIN [Controlling].dbo._control_dimension_num_dog_obj_auto_ad d WITH(NOLOCK)
+    ON p.obj_old = d.object_id
+LEFT JOIN Collected.dbo.PolicyRegistry c WITH(NOLOCK)
+    ON p.id_web = c.ID
+LEFT JOIN Controlling.._control_dimension_dog_in_ad dd WITH(NOLOCK)
+    ON p.dog_old = dd.dog_In_id
+left join [Controlling].[dbo].[_control_bos_agent] ba with(nolock)
+    on dd.dog_in_ID = ba.main_policy_id and ba.isLast = 1 and agentType = 1
+LEFT JOIN Controlling.._control_dimension_emploe_ad ee WITH(NOLOCK)
+    ON dd.emploe_id = ee.EMPLOE_ID
+LEFT JOIN Controlling.dbo._prolong_auto_years yeOld WITH(NOLOCK)
+    ON yeOld.dog_in_id = p.dog_old AND yeOld.object_id = p.obj_old
+LEFT JOIN controlling.dbo._agg_creatio_dog_in_id b WITH(NOLOCK)
+    ON p.dog_old = b.dog_old
+LEFT JOIN Controlling.._control_dimension_Strah_ad sss WITH(NOLOCK)
+    ON dd.STRACH_ID=sss.STRACH_ID
+LEFT JOIN Publisher..v_mdd_src_customer_binding cs WITH(NOLOCK)
+    ON sss.STRACH_ID = cs.strach_id
+LEFT JOIN Publisher..v_MDD_DBO_CUSTOMER   gc WITH(NOLOCK)
+    ON cs.mdm_id   = gc.mdm_id
+WHERE
+    p.[номер договора к пролонгации] in (
+    'ХХХ0394231244',
+    'ХХХ0403152775',
+    'ХХХ0403056580' --сюда вставить номера договоров
+    ))
+,dogis_old as (
+select distinct
+dog_old
+from RegisterKaskoSbor
+)
+,ss_old as (
+select dd.dog_old, max(v.SUMMP_RBL) SS_old
+from dogis_old dd
+inner join  Controlling.._control_dimension_var_ad v WITH(NOLOCK)
+    ON dd.dog_old = v.dog_in_id
+group by dd.dog_old
+)
+
+
+SELECT
+[№ Договора К Пролонгации],
+[Вид страхования],
+[Продукт],
+[Дата окончания страхования],
+[Год пролонгации],
+[Филиал ВСК],
+[Код филиала],
+[Канал],
+[Прошлый период Страховая премия],
+[Точка продаж],
+[Ответственный сотрудник ЦО Филиала],
+[Ответственный сотрудник Агент],
+[Номер агентского договора],
+mdm_id,
+[ФИО],
+ss.SS_old as [Страховая сумма],
+Объект,
+Марка,
+Модель,
+[Год выпуска ТС],
+VIN,
+    [Договор к пролонгации передан в АКЦ] =
+    CASE
+        WHEN isContactCenter IS NOT NULL AND isContactCenter <> '' THEN 'Да'
+        ELSE 'Нет'
+    END
+FROM RegisterKaskoSbor a
+left join ss_old ss on a.dog_old = ss.dog_old
+OPTION (RECOMPILE, MAXDOP 2);" data-database="ACTUAR2">
+                            <div class="preset-item-name">КАСКО, ОСАГО ACTUAR2</div>
+                            <div class="preset-item-desc">Получить столбцы Вид страхования, филиал, канал, адрес, премию, сумму, вид полиса и др. по номеру договора</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label for="monaco-editor" class="form-label">
+                        <i class="fas fa-code"></i> SQL запрос:
+                    </label>
+                    <div class="monaco-editor-container">
+                        <div id="monaco-editor"></div>
+                    </div>
+                </div>
+
+                <div class="query-actions">
+                    <button id="run-button" class="btn btn-primary">
+                        <i class="fas fa-play"></i> Выполнить запрос
+                    </button>
+
+                    <div class="ms-auto d-flex">
+                        <button id="clear-button" class="btn btn-icon" title="Очистить редактор">
+                            <i class="fas fa-eraser"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="execution-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="execution-message">Выберите базу данных и введите SQL запрос для выполнения</span>
+                    <span class="execution-time">0.00 сек</span>
+                </div>
+            </div>
+
+            <div id="results-tab" class="tab-content">
+                <div class="results-container">
+                    <div class="table-responsive">
+                        <table id="results-table" class="table table-striped">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <button id="save-button" class="btn btn-secondary" disabled>
+                        <i class="fas fa-save"></i> Сохранить результаты
+                    </button>
+                </div>
+                <div class="log-area">
+                    <p id="log-output"></p>
+                </div>
+            </div>
+
+            <div id="history-tab" class="tab-content">
+                <div class="alert alert-info animate-fade-in">
+                    <i class="fas fa-info-circle"></i> История запросов сохраняется локально в вашем браузере.
+                </div>
+                <div id="history-list"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js" defer></script>
+{% endblock %}

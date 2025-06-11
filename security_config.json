@@ -1,0 +1,27 @@
+{
+  "allowed_ips": [
+    "127.0.0.1",
+    "192.168.1.0/24",
+    "10.0.0.0/8"
+  ],
+  "blocked_ips": [],
+  "security_settings": {
+    "max_login_attempts": 5,
+    "block_duration_minutes": 15,
+    "session_timeout_minutes": 60,
+    "rate_limit_per_minute": 100,
+    "enable_2fa": false,
+    "require_strong_passwords": true,
+    "log_all_actions": true
+  },
+  "admin_users": {
+    "admin": {
+      "password_hash": "$pbkdf2-sha256$29000$example_hash",
+      "role": "super_admin",
+      "enabled": true,
+      "last_login": null,
+      "failed_attempts": 0
+    }
+  },
+  "updated": "2024-11-24T14:30:00"
+}

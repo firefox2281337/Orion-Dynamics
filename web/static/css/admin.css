@@ -1,0 +1,64 @@
+/* 
+ * Дополнительные стили для админской панели
+ * Основные стили уже включены в base.html
+ */
+
+/* Анимации для графиков */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chart-container {
+    animation: fadeInUp 0.5s ease;
+}
+
+/* Улучшенные индикаторы загрузки */
+.chart-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: var(--text-secondary);
+}
+
+.chart-error {
+    color: var(--danger-color);
+}
+
+/* Стили для процессов */
+.processes-table {
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 0.875rem;
+}
+
+/* Плавные переходы для метрик */
+.metric-value span {
+    transition: color 0.3s ease;
+}
+
+.mini-progress-bar {
+    transition: width 0.5s ease, background-color 0.3s ease;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+    .performance-controls {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .performance-summary {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+}

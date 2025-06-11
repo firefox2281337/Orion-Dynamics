@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_data.title }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" href="{{ url_for('static', filename='logo.ico') }}" type="image/x-icon">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nexus.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="bg-pattern"></div>
+        <div class="content-wrapper fadeIn">
+            <!-- Переключатель темы -->
+            <div class="dark-mode-toggle" onclick="NexusApp.toggleDarkMode()">
+                <i class="fas fa-sun"></i>
+                <i class="fas fa-moon"></i>
+            </div>
+
+            <!-- Логотип и заголовок -->
+            <div class="logo-section">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="logo">
+                </div>
+                <div>
+                    <h1 class="title">Nexus</h1>
+                    <p class="subtitle" id="subtitle">{{ page_data.subtitle }}</p>
+                </div>
+            </div>
+
+            <!-- Индикатор шагов (если нужен) -->
+            <div id="steps-container"></div>
+
+            <!-- Меню кнопок -->
+            <div class="menu-buttons" id="menu-buttons">
+                <!-- Кнопки будут добавлены через JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Конфигурация страницы -->
+    <script>
+        window.pageConfig = {{ page_data.config | tojson }};
+    </script>
+    
+    <script src="{{ url_for('static', filename='js/nexus-app.js') }}"></script>
+</body>
+</html>

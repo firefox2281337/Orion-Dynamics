@@ -1,0 +1,220 @@
+{% extends 'site/base.html' %}
+
+{% block title %}DataVision{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="dashboard-card animate-scale-in" style="margin-bottom:180px">
+        <div class="card-header">
+            <h1 class="mb-0">
+                <i class="fas fa-eye me-2"></i>DataVision
+            </h1>
+        </div>
+        
+        <div class="card-body">
+            <form id="dataForm" class="animate-fade-in">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-shield-alt"></i>Вид страхования:
+                        </label>
+                        <div class="multi-select">
+                            <div class="multi-select-button" id="insuranceTypeButton">Выберите вид страхования</div>
+                            <div class="multi-select-dropdown" id="insuranceTypeDropdown">
+                                <label>
+                                    <input type="checkbox" name="insurance_type" value="к"> КАСКО
+                                </label>
+                                <label>
+                                    <input type="checkbox" name="insurance_type" value="0"> ОСАГО
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-route"></i>Канал страхования:
+                        </label>
+                        <div class="multi-select">
+                            <div class="multi-select-button" id="channelButton">Выберите каналы</div>
+                            <div class="multi-select-dropdown" id="channelDropdown">
+                                <label>
+                                    <input type="checkbox" id="channelAll"> Выбрать все
+                                </label>
+                                <label><input type="checkbox" name="channel" value="'435'"> WSM</label>
+                                <label><input type="checkbox" name="channel" value="'412'"> Автосалон-канал</label>
+                                <label><input type="checkbox" name="channel" value="'362', '420'"> Агенты ЦРС</label>
+                                <label><input type="checkbox" name="channel" value="'415', '416', '439', '358'"> Банк - канал ЦКС</label>
+                                <label><input type="checkbox" name="channel" value="'77777', '77778'"> Входящее</label>
+                                <label><input type="checkbox" name="channel" value="'437'"> e-Гарант</label>
+                                <label><input type="checkbox" name="channel" value="'428'"> Единый агент РСА</label>
+                                <label><input type="checkbox" name="channel" value="'421', '409', '329'"> Интернет-продажи</label>
+                                <label><input type="checkbox" name="channel" value="'372', '361'"> Иные посредники</label>
+                                <label><input type="checkbox" name="channel" value="'407'"> Клиентский зал</label>
+                                <label><input type="checkbox" name="channel" value="'373'"> Конкурсные продажи</label>
+                                <label><input type="checkbox" name="channel" value="'418', '419'"> Лизинговые компании ЦКС</label>
+                                <label><input type="checkbox" name="channel" value="'0'"> Не определен</label>
+                                <label><input type="checkbox" name="channel" value="'432'"> Портфели других СК</label>
+                                <label><input type="checkbox" name="channel" value="'404'"> Прямые продажи - Банк-Клиент</label>
+                                <label><input type="checkbox" name="channel" value="'376'"> Прямые продажи - ВИП Менеджер</label>
+                                <label><input type="checkbox" name="channel" value="'359', '410'"> Прямые продажи корп. клиентам</label>
+                                <label><input type="checkbox" name="channel" value="'366'"> Пункты пропуска</label>
+                                <label><input type="checkbox" name="channel" value="'408', '357'"> Страховые брокеры по списку ЦКС</label>
+                                <label><input type="checkbox" name="channel" value="'363'"> Туристические фирмы</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">
+                        <i class="fas fa-building"></i>Код филиала:
+                    </label>
+                    <div class="multi-select">
+                        <div class="multi-select-button" id="branchCodeButton">Выберите филиалы</div>
+                        <div class="multi-select-dropdown" id="branchCodeDropdown">
+                            <label>
+                                <input type="checkbox" id="branchCodeAll"> Выбрать все
+                            </label>
+                            <label><input type="checkbox" name="branch_code" value="0000"> ГК</label>
+                            <label><input type="checkbox" name="branch_code" value="0001"> Ростовский</label>
+                            <label><input type="checkbox" name="branch_code" value="0002"> Белгородский</label>
+                            <label><input type="checkbox" name="branch_code" value="0003"> Омский</label>
+                            <label><input type="checkbox" name="branch_code" value="0004"> Мордовский</label>
+                            <label><input type="checkbox" name="branch_code" value="0005"> Рязанский</label>
+                            <label><input type="checkbox" name="branch_code" value="0008"> Нижегородский</label>
+                            <label><input type="checkbox" name="branch_code" value="0009"> Краснодарский</label>
+                            <label><input type="checkbox" name="branch_code" value="0010"> Саровский</label>
+                            <label><input type="checkbox" name="branch_code" value="0011"> Тамбовский</label>
+                            <label><input type="checkbox" name="branch_code" value="0012"> Мурманский</label>
+                            <label><input type="checkbox" name="branch_code" value="0013"> Псковский</label>
+                            <label><input type="checkbox" name="branch_code" value="0014"> Марийский</label>
+                            <label><input type="checkbox" name="branch_code" value="0015"> Тюменский</label>
+                            <label><input type="checkbox" name="branch_code" value="0016"> Кировский</label>
+                            <label><input type="checkbox" name="branch_code" value="0017"> Ингушский</label>
+                            <label><input type="checkbox" name="branch_code" value="0018"> Санкт - Петербургский</label>
+                            <label><input type="checkbox" name="branch_code" value="0019"> Тверской</label>
+                            <label><input type="checkbox" name="branch_code" value="0020"> Магнитогорский</label>
+                            <label><input type="checkbox" name="branch_code" value="0021"> Новосибирский</label>
+                            <label><input type="checkbox" name="branch_code" value="0022"> Сыктывкарский</label>
+                            <label><input type="checkbox" name="branch_code" value="0024"> Костромской</label>
+                            <label><input type="checkbox" name="branch_code" value="0025"> Калужский</label>
+                            <label><input type="checkbox" name="branch_code" value="0026"> Липецкий</label>
+                            <label><input type="checkbox" name="branch_code" value="0027"> Самарский</label>
+                            <label><input type="checkbox" name="branch_code" value="0028"> Ярославский</label>
+                            <label><input type="checkbox" name="branch_code" value="0029"> Алтайский филиал</label>
+                            <label><input type="checkbox" name="branch_code" value="0031"> Петропавловск - Камчатский</label>
+                            <label><input type="checkbox" name="branch_code" value="0032"> Кемеровский</label>
+                            <label><input type="checkbox" name="branch_code" value="0033"> Пензенский</label>
+                            <label><input type="checkbox" name="branch_code" value="0034"> Владимирский</label>
+                            <label><input type="checkbox" name="branch_code" value="0035"> Орловский</label>
+                            <label><input type="checkbox" name="branch_code" value="0036"> Воронежский</label>
+                            <label><input type="checkbox" name="branch_code" value="0037"> Смоленский</label>
+                            <label><input type="checkbox" name="branch_code" value="0038"> Архангельский</label>
+                            <label><input type="checkbox" name="branch_code" value="0039"> Балашихинский</label>
+                            <label><input type="checkbox" name="branch_code" value="0040"> Ханты-Мансийский</label>
+                            <label><input type="checkbox" name="branch_code" value="0041"> Комсомольский - на - Амуре филиал</label>
+                            <label><input type="checkbox" name="branch_code" value="0042"> Ивановский</label>
+                            <label><input type="checkbox" name="branch_code" value="0043"> Сочинский</label>
+                            <label><input type="checkbox" name="branch_code" value="0044"> Екатеринбургский</label>
+                            <label><input type="checkbox" name="branch_code" value="0045"> Чувашский</label>
+                            <label><input type="checkbox" name="branch_code" value="0047"> Ставропольский</label>
+                            <label><input type="checkbox" name="branch_code" value="0048"> Ижевский</label>
+                            <label><input type="checkbox" name="branch_code" value="0049"> Казанский</label>
+                            <label><input type="checkbox" name="branch_code" value="0050"> Ямало-Ненецкий</label>
+                            <label><input type="checkbox" name="branch_code" value="0051"> Курский</label>
+                            <label><input type="checkbox" name="branch_code" value="0052"> Североосетинский</label>
+                            <label><input type="checkbox" name="branch_code" value="0053"> Иркутский</label>
+                            <label><input type="checkbox" name="branch_code" value="0054"> Новгородский</label>
+                            <label><input type="checkbox" name="branch_code" value="0055"> Волгоградский</label>
+                            <label><input type="checkbox" name="branch_code" value="0056"> Саратовский</label>
+                            <label><input type="checkbox" name="branch_code" value="0057"> Читинский</label>
+                            <label><input type="checkbox" name="branch_code" value="0059"> Оренбургский</label>
+                            <label><input type="checkbox" name="branch_code" value="0061"> Петрозаводский</label>
+                            <label><input type="checkbox" name="branch_code" value="0062"> Новороссийский</label>
+                            <label><input type="checkbox" name="branch_code" value="0063"> Брянский</label>
+                            <label><input type="checkbox" name="branch_code" value="0064"> Дальневосточный</label>
+                            <label><input type="checkbox" name="branch_code" value="0066"> Калмыцкий</label>
+                            <label><input type="checkbox" name="branch_code" value="0067"> Калининградский</label>
+                            <label><input type="checkbox" name="branch_code" value="0068"> Якутский</label>
+                            <label><input type="checkbox" name="branch_code" value="0069"> Вологодский</label>
+                            <label><input type="checkbox" name="branch_code" value="0070"> Астраханский</label>
+                            <label><input type="checkbox" name="branch_code" value="0071"> Челябинский</label>
+                            <label><input type="checkbox" name="branch_code" value="0072"> Курганский</label>
+                            <label><input type="checkbox" name="branch_code" value="0073"> Хабаровский</label>
+                            <label><input type="checkbox" name="branch_code" value="0074"> Тульский</label>
+                            <label><input type="checkbox" name="branch_code" value="0075"> Красноярский</label>
+                            <label><input type="checkbox" name="branch_code" value="0076"> Пермский</label>
+                            <label><input type="checkbox" name="branch_code" value="0077"> Томский</label>
+                            <label><input type="checkbox" name="branch_code" value="0078"> Уфимский</label>
+                            <label><input type="checkbox" name="branch_code" value="0079"> Ульяновский</label>
+                            <label><input type="checkbox" name="branch_code" value="0080"> Дагестанский</label>
+                            <label><input type="checkbox" name="branch_code" value="0081"> Благовещенский</label>
+                            <label><input type="checkbox" name="branch_code" value="0082"> Сахалинский</label>
+                            <label><input type="checkbox" name="branch_code" value="0083"> Адыгейский</label>
+                            <label><input type="checkbox" name="branch_code" value="0084"> Бурятский</label>
+                            <label><input type="checkbox" name="branch_code" value="0085"> Хакасский</label>
+                            <label><input type="checkbox" name="branch_code" value="0086"> Московский</label>
+                            <label><input type="checkbox" name="branch_code" value="0087"> Находкинский</label>
+                            <label><input type="checkbox" name="branch_code" value="0088"> Горно-Алтайский филиал</label>
+                            <label><input type="checkbox" name="branch_code" value="0089"> Магаданский</label>
+                            <label><input type="checkbox" name="branch_code" value="0091"> Сургутский</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-calendar-day"></i>Дата начала:
+                        </label>
+                        <input type="text" id="startDate" name="start_date" class="form-control date-picker" placeholder="Выберите дату начала">
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-calendar-check"></i>Дата окончания:
+                        </label>
+                        <input type="text" id="endDate" name="end_date" class="form-control date-picker" placeholder="Выберите дату окончания">
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 mb-4">
+                    <button type="button" class="btn btn-primary flex-fill" id="generateReport">
+                        <i class="fas fa-chart-bar me-2"></i>Сгенерировать отчёт
+                    </button>
+                    <button type="button" class="btn btn-success" id="downloadButton" style="display: none;">
+                        <i class="fas fa-download me-2"></i>Скачать отчёт
+                    </button>
+                </div>
+            </form>
+
+            <div class="results-container animate-fade-in" id="resultsContainer" style="display: none;">
+                <div class="results-header">
+                    <h5 class="results-title">
+                        <i class="fas fa-table me-2"></i>Результаты запроса
+                    </h5>
+                </div>
+                <div class="table-responsive" id="resultsTable">
+                    <table class="table table-striped table-hover">
+                        <thead id="resultsTableHead"></thead>
+                        <tbody id="resultsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loader -->
+<div class="loader-wrapper" id="loaderWrapper">
+    <div class="loader"></div>
+    <div class="loader-text">Генерируется отчёт...</div>
+</div>
+{% endblock %}

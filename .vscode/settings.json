@@ -1,0 +1,8 @@
+{
+    "python.defaultInterpreterPath": "python",
+    "python.terminal.executeInFileDir": true,
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true
+    }
+}

@@ -1,0 +1,93 @@
+{% extends 'site/base.html' %}
+
+{% block title %}Сбор КАСКО{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="dashboard-card animate-scale-in">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-car me-2"></i>Сбор КАСКО
+                    </h5>
+                </div>
+
+                <div class="card-body">
+                    <div class="instruction-box animate-fade-in">
+                        <h5 class="mb-3">
+                            <i class="fas fa-info-circle me-2"></i>Инструкция:
+                        </h5>
+                        <ul class="ps-3">
+                            <li class="mb-2">Выберите квартал и год, за который требуется выгрузить отчёт.</li>
+                            <li class="mb-2">Выберите филиалы, по которым требуется выгрузить отчёт.</li>
+                            <li class="mb-2">Нажмите кнопку "Сгенерировать отчёт".</li>
+                            <li>Отчёт скачается, как только процедура генерации будет завершена.</li>
+                        </ul>
+                    </div>
+
+                    <form method="POST" class="animate-slide-in">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="quarter" class="form-label">
+                                    <i class="fas fa-calendar-alt"></i>Квартал:
+                                </label>
+                                <select class="form-select" id="quarter" name="quarter">
+                                    <option value="1">1 квартал</option>
+                                    <option value="2">2 квартал</option>
+                                    <option value="3">3 квартал</option>
+                                    <option value="4">4 квартал</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="year" class="form-label">
+                                    <i class="fas fa-calendar-alt"></i>Год:
+                                </label>
+                                <select class="form-select" id="year" name="year">
+                                    {% for year in range(2024, current_year + 4) %}
+                                    <option value="{{ year }}" {% if selected_year == year|string %} selected {% endif %}>{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="all" id="selectAllCheckboxes">
+                                <label class="form-check-label" for="selectAllCheckboxes">
+                                    Выбрать все
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="row animate-fade-in">
+                            {% for i in range(92) %}
+                            <div class="col-md-2 col-sm-3 col-4 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="{{ i + 1 }}" name="checkboxes" id="checkbox{{ i + 1 }}" {% if selected_checkboxes and (i+1)|string in selected_checkboxes %} checked {% endif %}>
+                                    <label class="form-check-label" for="checkbox{{ i + 1 }}">
+                                        </i>Филиал {{ i + 1 }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary mt-4 btn-lg">
+                                <i class="fas fa-file-export me-2"></i>Сгенерировать отчёт
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loader -->
+<div class="loader-wrapper" id="loaderWrapper">
+    <div class="loader"></div>
+    <div class="loader-text">Генерируется отчёт...</div>
+</div>
+{% endblock %}

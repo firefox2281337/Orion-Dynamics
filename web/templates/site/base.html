@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Мониторинг сервера{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='server.ico') }}" type="image/x-icon">
+    {% block head %}{% endblock %}
+</head>
+<body class="animate-fade-in">
+    <nav class="navbar navbar-expand-lg modern-navbar sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.server_status') }}">
+                <img src="{{ url_for('static', filename='server.ico') }}" alt="Server Icon" width="32" height="32">
+                <span class="text-gradient">Orion Dynamics</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav custom-center-nav">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == url_for('main.server_status') %}active{% endif %}" href="{{ url_for('main.server_status') }}">
+                            <i class="fas fa-chart-line me-2"></i>Мониторинг
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.path == url_for('processing.kasko_page') or request.path == url_for('processing.data_extraction') %}active{% endif %}" href="#" id="kaskoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-file-alt me-2"></i>Отчетность</i>
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="kaskoDropdown">
+                            <li><a class="dropdown-item {% if request.path == url_for('processing.kasko_page') %}active{% endif %}" href="{{ url_for('processing.kasko_page') }}">
+                                <i class="fas fa-car me-2"></i>Сбор КАСКО
+                            </a></li>
+                            <li><a class="dropdown-item {% if request.path == url_for('processing.data_extraction') %}active{% endif %}" href="{{ url_for('processing.data_extraction') }}">
+                                <i class="fas fa-ruler me-2"></i>Генератор метражей
+                            </a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == url_for('sql.sql_queries') %}active{% endif %}" href="{{ url_for('sql.sql_queries') }}">
+                            <i class="fas fa-database me-2"></i>SQL Запросы
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == url_for('processing.megahelper_page') %}active{% endif %}" href="{{ url_for('processing.megahelper_page') }}">
+                            <i class="fas fa-eye me-2"></i>DataVision
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == url_for('files.software_page') %}active{% endif %}" href="{{ url_for('files.software_page') }}">
+                            <i class="fas fa-download me-2"></i>Загрузки
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+    <button class="dark-mode-toggle floating-button-base" id="darkModeToggle" title="Переключить тему" aria-label="Переключить тему">
+        <i class="fas fa-moon"></i>
+        <div class="action-tooltip">Переключить тему</div>
+        <div class="glow-effect"></div>
+    </button>
+    
+    <button class="app-window-toggle floating-button-base" id="appWindowToggle" title="Открыть приложение Nexus" aria-label="Открыть приложение">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="App Icon" class="app-icon">
+        <div class="action-tooltip">Открыть приложение</div>
+        <div class="glow-effect"></div>
+    </button>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

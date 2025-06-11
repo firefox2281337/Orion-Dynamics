@@ -1,0 +1,170 @@
+{% extends "site/base.html" %}
+
+{% block title %}Скачивание файлов{% endblock %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <h1 class="display-5 fw-bold mb-3 text-gradient animate-slide-in">
+                <i class="fas fa-cloud-download-alt me-3"></i>Хранилище файлов
+            </h1>
+            <p class="lead text-muted animate-fade-in">
+                Хранилище с актуальными сборками, исходным кодом программ и утилитами для скачивания и использования
+            </p>
+        </div>
+    </div>
+
+    <div class="search-filters animate-slide-in">
+        <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-input" placeholder="Поиск файлов..." id="searchInput">
+        </div>
+    </div>
+
+    <div class="category-badges animate-fade-in">
+        <div class="category-badge active" data-category="all">
+            <i class="fas fa-folder"></i>
+            Все файлы
+        </div>
+        <div class="category-badge" data-category="documentation">
+            <i class="fas fa-file-pdf"></i>
+            Документация
+        </div>
+        <div class="category-badge" data-category="source">
+            <i class="fas fa-file-code"></i>
+            Исходники
+        </div>
+        <div class="category-badge" data-category="report">
+            <i class="fas fa-file-alt"></i>
+            Отчеты
+        </div>
+        <div class="category-badge" data-category="program">
+            <i class="fas fa-desktop"></i>
+            Программы
+        </div>
+        <div class="category-badge" data-category="instruction">
+            <i class="fas fa-book"></i>
+            Инструкции
+        </div>
+    </div>
+
+    {% set category_icons = {
+        'documentation': 'fa-file-word',
+        'source': 'fa-file-code',
+        'program': 'fa-desktop',
+        'instruction': 'fa-book',
+        'report': 'fa-file-alt'
+    } %}
+    
+    {% set category_titles = {
+        'documentation': 'Документация',
+        'source': 'Исходники',
+        'program': 'Программы',
+        'instruction': 'Инструкции',
+        'report': 'Отчеты'
+    } %}
+
+    {% for category, files in grouped_files.items() %}
+    <div class="file-category-block animate-scale-in">
+        <div class="card-header">
+            <h3>
+                <i class="fas {{ category_icons.get(category, 'fa-folder-open') }}"></i>
+                {{ category_titles.get(category, category) }}
+            </h3>
+        </div>
+        
+        <div class="file-list">
+            {% for file in files %}
+            <div class="file-item" data-category="{{ file.category }}">
+                <div class="file-icon {{ file.type }}">
+                    <i class="fas fa-{{ file.icon }}"></i>
+                </div>
+                <div class="file-details">
+                    <div class="file-name">{{ file.name }}</div>
+                    <div class="file-meta">
+                        <span>
+                            <i class="fas fa-calendar"></i>
+                            {{ file.date }}
+                        </span>
+                        <span>
+                            <i class="fas fa-weight"></i>
+                            {{ file.size }}
+                        </span>
+                        {% if file.author %}
+                        <span>
+                            <i class="fas fa-user"></i>
+                            {{ file.author }}
+                        </span>
+                        {% endif %}
+                        {% if file.version %}
+                        <span>
+                            <i class="fas fa-code-branch"></i>
+                            {{ file.version }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="file-actions">
+                    <button class="file-btn" onclick="previewFile('{{ file.id }}')" title="Предпросмотр">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="file-btn download" onclick="downloadFile('{{ file.id }}')" title="Скачать">
+                        <i class="fas fa-download"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    
+    <div class="empty-state" style="display: none;">
+        <div class="empty-icon">
+            <i class="fas fa-search"></i>
+        </div>
+        <h4>Файлы не найдены</h4>
+        <p>По вашему запросу файлы не найдены. Попробуйте изменить критерии поиска или просмотреть все доступные файлы.</p>
+        <button class="btn btn-primary" id="showAllFilesBtn">
+            <i class="fas fa-refresh me-2"></i>Показать все файлы
+        </button>
+    </div>
+</div>
+
+<!-- Модальное окно предпросмотра -->
+<div class="file-preview-modal" id="filePreviewModal">
+    <div class="file-preview-content">
+        <div class="file-preview-header">
+            <div class="file-preview-title">
+                <i class="fas fa-file" id="previewFileIcon"></i>
+                <span id="previewFileName">Имя файла</span>
+            </div>
+            <button class="file-preview-close" onclick="closePreview()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="file-preview-body" id="previewContent">
+            <div class="text-center p-5" id="previewLoading">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <div>Загрузка предпросмотра...</div>
+            </div>
+        </div>
+
+        <div class="file-preview-actions">
+            <button class="btn btn-secondary" onclick="closePreview()">
+                <i class="fas fa-times me-2"></i>Закрыть
+            </button>
+            <button class="btn btn-primary" id="downloadBtn">
+                <i class="fas fa-download me-2"></i>Скачать
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

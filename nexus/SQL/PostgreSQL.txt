@@ -1,0 +1,15 @@
+CREATE TEMP TABLE temp_contracts (contract_number VARCHAR);
+INSERT INTO temp_contracts (contract_number) VALUES {contracts_strs};
+SELECT 
+t1.contract_number, 
+t3.strah_master_id AS mdm_id, 
+CASE WHEN c.phone_f = 100 THEN c.phone ELSE NULL END AS phone, 
+CASE WHEN c.phone_f = 100 THEN c.phone2 ELSE NULL END AS phone2, 
+CASE WHEN c.phone_f = 100 THEN c.email ELSE NULL END AS email, 
+CASE WHEN c.phone_f = 100 THEN c.email2 ELSE NULL END AS email2, 
+CASE WHEN c.phone_f = 100 THEN f.birth ELSE NULL END AS birth 
+FROM temp_contracts AS t1 
+LEFT JOIN public._ins_contract_by_number AS t2 ON t1.contract_number = t2.contract_number
+LEFT JOIN public._ins_contract AS t3 ON t2.contract_id = t3.contract_id 
+LEFT JOIN public._subject_master_fl_contact AS c ON c.subject_master_id = t3.strah_master_id 
+LEFT JOIN public._subject_master_fl AS f ON f.subject_master_id = t3.strah_master_id;

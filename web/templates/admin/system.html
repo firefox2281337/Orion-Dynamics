@@ -1,0 +1,202 @@
+<!-- web/templates/admin/system.html -->
+{% extends 'admin/base.html' %}
+
+{% block title %}Информация о системе{% endblock %}
+
+{% block breadcrumb %}
+<i class="fas fa-chevron-right"></i>
+<span>Система</span>
+{% endblock %}
+
+{% block content %}
+<div class="system-info-page">
+    <!-- System Overview Cards -->
+    <div class="stats-grid">
+        <div class="stat-card primary">
+            <div class="stat-icon">
+                <i class="fas fa-server"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="systemUptime">0д 0ч</h3>
+                <p>Время работы</p>
+                <div class="stat-trend up">
+                    <i class="fas fa-arrow-up"></i> Стабильно
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card success">
+            <div class="stat-icon">
+                <i class="fas fa-microchip"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="cpuCores">8</h3>
+                <p>Процессорных ядер</p>
+                <div class="stat-trend">
+                    <i class="fas fa-info"></i> x64
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card warning">
+            <div class="stat-icon">
+                <i class="fas fa-memory"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="totalMemory">16 ГБ</h3>
+                <p>Общая память</p>
+                <div class="stat-trend">
+                    <i class="fas fa-chart-pie"></i> DDR4
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card danger">
+            <div class="stat-icon">
+                <i class="fas fa-hdd"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="totalDisk">500 ГБ</h3>
+                <p>Дисковое пространство</p>
+                <div class="stat-trend">
+                    <i class="fas fa-database"></i> SSD
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed System Information -->
+    <div class="dashboard-grid">
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h3><i class="fas fa-info-circle"></i> Общая информация</h3>
+            </div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Операционная система</span>
+                        <span class="info-value" id="osInfo">Loading...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Архитектура</span>
+                        <span class="info-value" id="architecture">Loading...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Имя компьютера</span>
+                        <span class="info-value" id="hostname">Loading...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Пользователь</span>
+                        <span class="info-value" id="currentUser">Loading...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Python версия</span>
+                        <span class="info-value" id="pythonVersion">Loading...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Рабочая директория</span>
+                        <span class="info-value" id="workingDir">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h3><i class="fas fa-network-wired"></i> Сетевые интерфейсы</h3>
+            </div>
+            <div class="card-body">
+                <div id="networkInterfaces" class="network-list">
+                    <div class="loading">Загрузка сетевых интерфейсов...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h3><i class="fas fa-list"></i> Активные процессы</h3>
+                <button class="btn btn-sm btn-outline" onclick="refreshProcesses()">
+                    <i class="fas fa-sync"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="processList" class="process-list">
+                    <div class="loading">Загрузка процессов...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h3><i class="fas fa-cogs"></i> Переменные окружения</h3>
+            </div>
+            <div class="card-body">
+                <div class="env-search">
+                    <input type="text" id="envSearch" placeholder="Поиск переменных..." class="form-control">
+                </div>
+                <div id="envVariables" class="env-list">
+                    <div class="loading">Загрузка переменных окружения...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.info-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: 0.5rem;
+}
+
+.info-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.info-value {
+    color: var(--text-primary);
+    font-family: monospace;
+}
+
+.network-list, .process-list, .env-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.network-item, .process-item, .env-item {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.env-search {
+    margin-bottom: 1rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    loadSystemInfo();
+});
+
+async function loadSystemInfo() {
+    // Mock system information - в реальности загружается через API
+    document.getElementById('osInfo').textContent = 'Windows 11 Pro';
+    document.getElementById('architecture').textContent = 'x64';
+    document.getElementById('hostname').textContent = 'ADMIN-PC';
+    document.getElementById('currentUser').textContent = 'administrator';
+    document.getElementById('pythonVersion').textContent = '3.11.5';
+    document.getElementById('workingDir').textContent = 'C:\\Projects\\AdminPanel';
+}
+</script>
+{% endblock %}

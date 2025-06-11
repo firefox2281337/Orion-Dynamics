@@ -1,0 +1,150 @@
+{% extends 'site/base.html' %}
+
+{% block title %}Мониторинг сервера{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4 animate-slide-in">
+                <h1 class="h4 mb-0 text-gradient">
+                    <i class="fas fa-chart-line me-3"></i>Мониторинг ресурсов
+                </h1>
+                <button id="refreshButton" class="refresh-button">
+                    <i class="fas fa-sync-alt"></i> Обновить
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-4 mb-md-0">
+            <div class="dashboard-card metric-card animate-scale-in">
+                <div class="metric-icon" style="background: linear-gradient(135deg, rgba(67, 97, 238, 0.2), rgba(67, 97, 238, 0.1)); color: var(--primary-color);">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="metric-value">{{ system_info['uptime'] }}</div>
+                <div class="metric-label">Время работы</div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-4 mb-md-0">
+            <div class="dashboard-card metric-card animate-scale-in">
+                <div class="progress-circle">
+                    <svg viewBox="-2 -2 40 40">
+                        <path class="progress-circle-bg"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path class="progress-circle-value" stroke="#4361ee"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            stroke-dasharray="{{ system_info['cpu'] }}, 100"
+                        />
+                    </svg>
+                    <div class="progress-circle-text">{{ system_info['cpu'] }}%</div>
+                </div>
+                <div class="metric-label">Загрузка ЦПУ</div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-4 mb-md-0">
+            <div class="dashboard-card metric-card animate-scale-in">
+                <div class="progress-circle">
+                    <svg viewBox="-2 -2 40 40">
+                        <path class="progress-circle-bg"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path class="progress-circle-value" stroke="#f39c12"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            stroke-dasharray="{{ system_info['memory'] }}, 100"
+                        />
+                    </svg>
+                    <div class="progress-circle-text">{{ system_info['memory'] }}%</div>
+                </div>
+                <div class="metric-label">Использование памяти</div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6">
+            <div class="dashboard-card metric-card animate-scale-in">
+                <div class="progress-circle">
+                    <svg viewBox="-2 -2 40 40">
+                        <path class="progress-circle-bg"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path class="progress-circle-value" stroke="#2ecc71"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            stroke-dasharray="{{ system_info['disk'] }}, 100"
+                        />
+                    </svg>
+                    <div class="progress-circle-text">{{ system_info['disk'] }}%</div>
+                </div>
+                <div class="metric-label">Использование диска</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-card h-100 animate-fade-in">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-server me-2"></i>Статус сервера
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>
+                        Сервер работает нормально и доступен для обработки запросов.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="dashboard-card animate-fade-in">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-database me-2"></i>Состояние баз данных
+                    </h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for db_name, db_info in db_statuses.items() %}
+                    <div class="list-group-item db-item {{ 'db-active' if db_info.status == 'Активен' else 'db-inactive' }} p-4 smooth-transition">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">
+                                    <i class="fas fa-database me-2"></i>{{ db_name }}
+                                </h6>
+                                <div class="d-flex align-items-center">
+                                    <span class="status-badge {{ 'status-active' if db_info.status == 'Активен' else 'status-inactive' }} me-3">
+                                        <i class="fas {{ 'fa-check-circle' if db_info.status == 'Активен' else 'fa-times-circle' }} me-1"></i>
+                                        {{ db_info.status }}
+                                    </span>
+                                    {% if db_info.response_time %}
+                                    <span class='response-time'>
+                                        <i class='fas fa-bolt me-1'></i>{{ db_info.response_time }} мс
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if db_info.error %}
+                            <button class='btn-toggle-details' data-bs-toggle='collapse' data-bs-target='#error-{{ db_name|replace(" ", "-") }}'>
+                                <i class="fas fa-exclamation-triangle me-1"></i>Детали ошибки
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% if db_info.error %}
+                        <div class='collapse' id='error-{{ db_name|replace(" ", "-") }}'>
+                            <div class='error-details'>{{ db_info.error }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

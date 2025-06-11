@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ autodailyes_data.title }}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/autoreg.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="bg-pattern"></div>
+        <div class="content-wrapper">
+            <!-- Dark Mode Toggle -->
+            <div class="dark-mode-toggle" onclick="AutoDailyesApp.toggleDarkMode()">
+                <i class="fas fa-sun"></i>
+                <i class="fas fa-moon"></i>
+            </div>
+
+            <!-- Header -->
+            <header class="header-section">
+                <div class="logo-section">
+                    <div class="logo">
+                        <i class="{{ autodailyes_data.icon }}"></i>
+                    </div>
+                    <div>
+                        <h1 class="title">{{ autodailyes_data.mainTitle }}</h1>
+                        <p class="subtitle">{{ autodailyes_data.subtitle }}</p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Section Title -->
+            <h3 class="section-title">
+                <i class="fas fa-file-upload"></i> {{ autodailyes_data.sectionTitle }}
+            </h3>
+
+            <!-- Drag & Drop Area -->
+            <div class="drag-drop-area" id="dragDropArea" onclick="AutoDailyesApp.selectFiles()">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div class="upload-text" id="uploadText">
+                    {{ autodailyes_data.config.dragDropText | safe }}
+                </div>
+            </div>
+
+            <!-- File Status -->
+            <div class="file-status" id="fileStatus">
+                <i class="fas fa-info-circle"></i>
+                <span>{{ autodailyes_data.initialStatusText }}</span>
+            </div>
+
+            <!-- File List -->
+            <ul class="file-list" id="fileList"></ul>
+
+            <!-- Execute Button -->
+            <div class="centered-button">
+                <button class="btn btn-primary" id="executeButton" onclick="AutoDailyesApp.executeTask()" disabled>
+                    <i class="fas fa-play"></i> Выполнить
+                </button>
+            </div>
+
+            <!-- Bottom Buttons -->
+            <footer class="bottom-buttons">
+                <button class="btn btn-outline" onclick="AutoDailyesApp.goBack()">
+                    <i class="fas fa-arrow-left"></i> Назад
+                </button>
+                <button class="btn btn-outline" onclick="AutoDailyesApp.clearFiles()">
+                    <i class="fas fa-trash"></i> Очистить
+                </button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Progress Modal -->
+    <div id="progress-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-sync-alt fa-spin"></i> Обработка задачи</h2>
+            </div>
+            <img src="{{ url_for('static', filename='animation.gif') }}" alt="loading">
+            <div class="modal-body-loading">
+                <div class="progress-info">
+                    <div id="progress-step">Инициализация...</div>
+                    <div id="progress-percentage">0%</div>
+                </div>
+                <div class="progress-bar-large">
+                    <div class="progress-bar-fill-large" id="progress-bar-fill"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" id="cancelButton" onclick="AutoDailyesApp.cancelProcessing()">
+                    <i class="fas fa-stop"></i> Отменить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Конфигурация автоежедневки -->
+    <script>
+        window.autodailyesConfig = {{ autodailyes_data.config | tojson }};
+    </script>
+
+    <script src="{{ url_for('static', filename='js/autodailyes-app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!-- web/templates/admin/config.html -->
+{% extends 'admin/base.html' %}
+
+{% block title %}Редактор конфигурации{% endblock %}
+
+{% block breadcrumb %}
+<i class="fas fa-chevron-right"></i>
+<span>Конфигурация</span>
+{% endblock %}
+
+{% block content %}
+<div class="config-editor">
+    <div class="config-layout">
+        <div class="config-sidebar">
+            <div class="config-header">
+                <h3><i class="fas fa-cog"></i> Конфигурации</h3>
+            </div>
+            <div class="config-tree">
+                <div class="config-group">
+                    <div class="config-group-title">Система</div>
+                    <div class="config-item active" data-config="database">
+                        <i class="fas fa-database"></i> База данных
+                    </div>
+                    <div class="config-item" data-config="logging">
+                        <i class="fas fa-file-alt"></i> Логирование
+                    </div>
+                    <div class="config-item" data-config="security">
+                        <i class="fas fa-shield-alt"></i> Безопасность
+                    </div>
+                </div>
+                <div class="config-group">
+                    <div class="config-group-title">Приложение</div>
+                    <div class="config-item" data-config="flask">
+                        <i class="fas fa-flask"></i> Flask
+                    </div>
+                    <div class="config-item" data-config="gui">
+                        <i class="fas fa-desktop"></i> GUI
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="config-main">
+            <div class="config-toolbar">
+                <div class="toolbar-left">
+                    <h3 id="configTitle">Конфигурация базы данных</h3>
+                </div>
+                <div class="toolbar-right">
+                    <button class="btn btn-outline btn-sm" onclick="resetConfig()">
+                        <i class="fas fa-undo"></i> Сбросить
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="saveConfig()">
+                        <i class="fas fa-save"></i> Сохранить
+                    </button>
+                </div>
+            </div>
+
+            <div class="config-content">
+                <div class="config-form" id="configForm">
+                    <!-- Database Config Form -->
+                    <div class="form-section">
+                        <h4>Подключение к базе данных</h4>
+                        <div class="form-group">
+                            <label>Хост</label>
+                            <input type="text" class="form-control" value="localhost" id="dbHost">
+                        </div>
+                        <div class="form-group">
+                            <label>Порт</label>
+                            <input type="number" class="form-control" value="5432" id="dbPort">
+                        </div>
+                        <div class="form-group">
+                            <label>База данных</label>
+                            <input type="text" class="form-control" value="admin_panel" id="dbName">
+                        </div>
+                        <div class="form-group">
+                            <label>Пользователь</label>
+                            <input type="text" class="form-control" value="admin" id="dbUser">
+                        </div>
+                        <div class="form-group">
+                            <label>Пароль</label>
+                            <input type="password" class="form-control" value="********" id="dbPassword">
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Настройки пула соединений</h4>
+                        <div class="form-group">
+                            <label>Максимум соединений</label>
+                            <input type="number" class="form-control" value="20" id="maxConnections">
+                        </div>
+                        <div class="form-group">
+                            <label>Тайм-аут соединения (сек)</label>
+                            <input type="number" class="form-control" value="30" id="connectionTimeout">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="config-actions">
+                <button class="btn btn-sm btn-outline" onclick="testConnection()">
+                    <i class="fas fa-plug"></i> Тест соединения
+                </button>
+                <button class="btn btn-sm btn-outline" onclick="exportConfig()">
+                    <i class="fas fa-download"></i> Экспорт
+                </button>
+                <button class="btn btn-sm btn-outline" onclick="importConfig()">
+                    <i class="fas fa-upload"></i> Импорт
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.config-layout {
+    display: flex;
+    height: calc(100vh - 200px);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.config-sidebar {
+    width: 250px;
+    background: var(--bg-tertiary);
+    border-right: 1px solid var(--border-color);
+}
+
+.config-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.config-tree {
+    padding: 1rem 0;
+}
+
+.config-group {
+    margin-bottom: 1.5rem;
+}
+
+.config-group-title {
+    padding: 0 1rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.config-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: var(--text-primary);
+}
+
+.config-item:hover {
+    background: var(--bg-secondary);
+}
+
+.config-item.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.config-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.config-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.toolbar-left h3 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.toolbar-right {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.config-content {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.form-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-tertiary);
+    border-radius: 0.5rem;
+}
+
+.form-section h4 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    color: var(--text-primary);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.config-actions {
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 0.5rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    setupConfigEditor();
+});
+
+function setupConfigEditor() {
+    // Setup config item click handlers
+    document.querySelectorAll('.config-item').forEach(item => {
+        item.addEventListener('click', () => {
+            document.querySelectorAll('.config-item').forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            loadConfigForm(item.dataset.config);
+        });
+    });
+}
+
+function loadConfigForm(configType) {
+    const title = document.getElementById('configTitle');
+    const form = document.getElementById('configForm');
+    
+    // Update title and load appropriate form
+    switch(configType) {
+        case 'database':
+            title.textContent = 'Конфигурация базы данных';
+            // Form already loaded
+            break;
+        case 'logging':
+            title.textContent = 'Конфигурация логирования';
+            loadLoggingConfig();
+            break;
+        case 'security':
+            title.textContent = 'Настройки безопасности';
+            loadSecurityConfig();
+            break;
+        // Add other configs...
+    }
+}
+
+function saveConfig() {
+    console.log('Saving configuration...');
+    if (window.adminDashboard) {
+        window.adminDashboard.showToast('success', 'Конфигурация сохранена');
+    }
+}
+
+function resetConfig() {
+    if (confirm('Сбросить все изменения?')) {
+        console.log('Resetting configuration...');
+    }
+}
+
+function testConnection() {
+    console.log('Testing database connection...');
+    if (window.adminDashboard) {
+        window.adminDashboard.showToast('success', 'Соединение установлено успешно');
+    }
+}
+
+function exportConfig() {
+    console.log('Exporting configuration...');
+}
+
+function importConfig() {
+    console.log('Importing configuration...');
+}
+</script>
+{% endblock %}

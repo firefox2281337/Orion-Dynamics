@@ -1,0 +1,84 @@
+IF OBJECT_ID('tempdb.dbo.#first', 'U') IS NOT NULL DROP TABLE #first;
+SELECT
+[OTDEL_ID] as [Код филиала],
+f.NA_OTD as [Наименование филиала],
+[d_zakl] as [Дата заключения],
+[D_START] as [Дата начала действия договора],
+[D_END] as [Дата окончания действия договора],
+[NUM_DOG] as [Номер договора к пролонгации],
+a.dog_in_id,
+a.dog_in_new,
+[INSURANCETYPE_TO_PL] as [Вид страхования],
+tc.div_name_corr as [Подразделение],
+s.SChannelNAme2015 as [Канал продаж],
+[Наименование] as [Наименование страхователя],
+[Адрес регистрации застрахованного объекта] as [Адрес],
+[Наименование выгодоприобретателя] as [Банк],
+[SUMMP_RBL] as [Страховая премия],
+[prem_nach] as [Премия начисленная],
+CASE WHEN ISNULL([INN_Bank], 0) = 1 THEN 'Да' ELSE 'Нет' END as [Признак Сбербанка]
+INTO #first FROM [Controlling].[dbo].[_control_prolong_ifl_ipoteka] a WITH (NOLOCK)
+LEFT JOIN Accounting.._filial_list f WITH (NOLOCK) ON a.OTDEL_ID = f.filial_id
+LEFT JOIN Controlling.._control_stage_komis_base pr WITH (NOLOCK) ON a.dog_in_new = pr.dog_in_id
+LEFT JOIN Accounting.._info_translate_TC tc WITH (NOLOCK) ON a.DIMENSION_ZPP_2015 = tc.TC_ax
+LEFT JOIN Collected..vSalesChannels_SalesName s WITH (NOLOCK) ON a.SALESCHANNELID = s.Saleschannelid
+LEFT JOIN [Controlling].[dbo]._control_dimension_vsk_insprogram_ad i WITH (NOLOCK) ON a.InsPrgId = i.NSI_CODE
+WHERE NUM_DOG IN ({contracts_strss}); 
+
+IF OBJECT_ID('tempdb.dbo.#prolongHistory', 'U') IS NOT NULL DROP TABLE #prolongHistory;
+CREATE TABLE #prolongHistory(
+dog_in_id VARCHAR(33) NOT NULL,
+dog_in_id_old VARCHAR(33) NULL,
+d_beg_otv DATETIME NOT NULL,
+d_end_otv DATETIME NOT NULL
+); 
+INSERT INTO #prolongHistory
+ 
+SELECT
+v.dog_in_id,
+CAST(NULL AS VARCHAR(33)) AS dog_in_id_old,
+v.[Дата начала действия договора],
+v.[Дата окончания действия договора] 
+FROM #first v;
+DECLARE @SQL NVARCHAR(MAX);
+DECLARE @tableName NVARCHAR(255) = 'Controlling.dbo._control_prolong_ifl_ipoteka'; 
+SET @SQL = 'INSERT INTO #prolongHistory
+SELECT
+a1.dog_in_id,
+a2.dog_in_id,
+a2.d_beg_otv,
+a2.d_end_otv  
+FROM #prolongHistory a1
+INNER JOIN ' + @tableName + ' a2 WITH (NOLOCK) ON a2.dog_in_new = a1.dog_in_id AND a1.d_beg_otv <> a2.d_beg_otv'; 
+EXEC(@SQL);
+DECLARE @i INT = 1; 
+WHILE @i > 0 BEGIN SET @SQL = 'INSERT
+INTO #prolongHistory
+ 
+SELECT
+a1.dog_in_id,
+a2.dog_in_id,
+a2.d_beg_otv,
+a2.d_end_otv 
+FROM #prolongHistory a1
+INNER JOIN ' + @tableName + ' a2 
+WITH (NOLOCK) ON a2.dog_in_new = a1.dog_in_id_old AND a1.dog_in_id_old IS NOT NULL
+WHERE NOT EXISTS (SELECT 1 FROM #prolongHistory a WHERE a.dog_in_id_old = a2.dog_in_id)'; 
+EXEC(@SQL);
+SET @i = @@ROWCOUNT; END; IF OBJECT_ID('tempdb.dbo.#prolongYear', 'U') IS NOT NULL DROP TABLE #prolongYear;
+SELECT dog_in_id, YEARS = DATEDIFF(YEAR, MIN(d_beg_otv), MAX(d_beg_otv)) 
+INTO #prolongYear 
+FROM #prolongHistory 
+GROUP BY dog_in_id; 
+SELECT
+[Номер договора к пролонгации],
+[Вид страхования],
+[Наименование филиала],
+[Канал продаж],
+[Адрес],
+[Страховая премия],
+[Премия начисленная],
+[Признак Сбербанка],
+[Срок жизни договора] = CASE WHEN a1.dog_in_new IS NOT NULL THEN a2.YEARS + 2 ELSE a2.YEARS + 1 END,
+[Банк]
+FROM #first a1 LEFT JOIN #prolongYear a2 ON a2.dog_in_id = a1.dog_in_id;

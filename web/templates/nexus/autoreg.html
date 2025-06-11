@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>{{ autoreg_data.title }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/autoreg.css') }}">
+<link rel="icon" href="{{ url_for('static', filename='logo.ico') }}" type="image/x-icon">
+</head>
+<body>
+<div class="container">
+    <div class="bg-pattern"></div>
+    <div class="content-wrapper">
+    <!-- Темная тема -->
+    <div class="dark-mode-toggle" onclick="AutoregApp.toggleDarkMode()">
+        <i class="fas fa-sun"></i>
+        <i class="fas fa-moon"></i>
+    </div>
+
+    <!-- Шапка -->
+    <header class="header-section">
+        <div class="logo-section">
+        <div class="logo">
+            <i class="{{ autoreg_data.icon }}"></i>
+        </div>
+        <div>
+            <h1 class="title">Автореестры</h1>
+            <p class="subtitle">{{ autoreg_data.subtitle }}</p>
+        </div>
+        </div>
+        <div class="icon-btn-group">
+        <button class="icon-button tooltip" onclick="AutoregApp.openCorrespondencesDialog()">
+            <i class="fas fa-exchange-alt"></i>
+            <span class="tooltiptext">Управление соответствиями</span>
+        </button>
+        <button class="icon-button tooltip" onclick="AutoregApp.openSettingsDialog()">
+            <i class="fas fa-cog"></i>
+            <span class="tooltiptext">Настройки приложения</span>
+        </button>
+        </div>
+    </header>
+
+    <!-- Индикатор шагов -->
+    <div class="steps-indicator">
+        <div class="step completed">
+        <div class="step-number">1</div>
+        <div class="step-text">Выбор типа</div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step active">
+        <div class="step-number">2</div>
+        <div class="step-text">Загрузка файла</div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-text">Сопоставление</div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-text">Обработка</div>
+        </div>
+    </div>
+
+    <!-- Заголовок секции -->
+    <h3 class="section-title">
+        <i class="fas fa-file-upload"></i> 
+        {% if autoreg_data.config.multipleFiles %}
+            Перетащите или выберите файлы реестра
+        {% else %}
+            Выберите файл реестра
+        {% endif %}
+    </h3>
+
+    <!-- Секция выбора файла для обычных автореестров -->
+    {% if not autoreg_data.config.multipleFiles %}
+    <section class="file-path-section">
+        <div class="file-input-container">
+            <input type="text" id="file-path-input" class="file-path-input" placeholder="Выберите файл Excel (.xlsx, .xls)" readonly />
+            <button class="icon-button primary" onclick="AutoregApp.selectFile()" title="Выбрать файл">
+                <i class="fas fa-folder-open"></i>
+            </button>
+        </div>
+        <div class="file-status">
+            <i class="fas fa-info-circle"></i>
+            <span>Файл не выбран</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-bar-fill"></div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Drag & Drop Area для множественных файлов -->
+    {% if autoreg_data.config.multipleFiles %}
+    <div class="drag-drop-area" id="dragDropArea" onclick="AutoregApp.selectFile()">
+        <div class="upload-icon">
+            <i class="fas fa-cloud-upload-alt"></i>
+        </div>
+        <div class="upload-text" id="uploadText">
+            {{ autoreg_data.config.dragDropText | safe }}
+        </div>
+    </div>
+
+    <!-- File Status -->
+    <div class="file-status" id="fileStatus">
+        <i class="fas fa-info-circle"></i>
+        <span>Файлы не выбраны (требуется {{ autoreg_data.config.requiredFilesCount }} файла)</span>
+    </div>
+
+    <!-- File List -->
+    <ul class="file-list" id="fileList"></ul>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar">
+        <div class="progress-bar-fill" id="progressBarFill"></div>
+    </div>
+    {% endif %}
+
+    <!-- Кнопка продолжения -->
+    <div class="centered-button">
+        <button class="btn btn-primary" id="loadButton" onclick="AutoregApp.loadTemplateHeaders()" disabled>
+            <i class="fas fa-sync-alt"></i> Загрузить заголовки
+        </button>
+    </div>
+
+    <!-- Списки заголовков -->
+    <div class="lists-section">
+        <div class="list-container fadeIn">
+            <div class="list-header">
+                <div class="list-title">
+                    <i class="fas fa-list-ul"></i> Заголовки шаблона
+                    <div class="list-counter" id="template-counter">0</div>
+                </div>
+            </div>
+            <div class="list-search">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Поиск заголовков..." onkeyup="AutoregApp.filterTemplateHeaders(this.value)">
+            </div>
+            <ul id="list-registry" class="header-list"></ul>
+        </div>
+        
+        <div class="list-container fadeIn">
+            <div class="list-header">
+                <div class="list-title">
+                    <i class="fas fa-table"></i> Заголовки файла
+                    <div class="list-counter" id="file-counter">0</div>
+                </div>
+            </div>
+            <div class="list-search">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Поиск заголовков..." onkeyup="AutoregApp.filterFileHeaders(this.value)">
+            </div>
+            <ul id="list-excel" class="header-list"></ul>
+        </div>
+    </div>
+
+    <!-- Визуализация сопоставления -->
+    <div class="mapping-visualization">
+        <div class="mapping-line"></div>
+        <div class="mapping-badge">Связано</div>
+    </div>
+
+    <!-- Кнопка сопоставления -->
+    <div class="centered-button">
+        <button class="btn btn-primary" onclick="AutoregApp.mapHeaders()" disabled>
+            <i class="fas fa-link"></i> Сохранить в память
+        </button>
+    </div>
+
+    <!-- Нижние кнопки -->
+    <footer class="bottom-buttons">
+        <button class="btn btn-outline" onclick="AutoregApp.goBack()">
+            <i class="fas fa-arrow-left"></i> Назад
+        </button>
+        <button class="btn btn-primary" onclick="AutoregApp.openTaskDialog()" disabled>
+            <i class="fas fa-file-export"></i> Сделать реестр
+        </button>
+    </footer>
+    </div>
+</div>
+
+<!-- Контейнер уведомлений -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Модальные окна -->
+<div id="correspondences-modal" class="modal">
+    <div class="modal-content">
+    <div class="modal-header">
+        <h2><i class="fas fa-exchange-alt"></i> Управление соответствиями</h2>
+        <button class="close-btn" onclick="AutoregApp.closeCorrespondencesDialog()">
+        <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="modal-body">
+        <div class="correspondence-list" id="correspondence-list">
+        </div>
+        <div class="empty-list-message" id="empty-correspondence-message">
+        <i class="fas fa-info-circle"></i>
+        <p>Соответствия не установлены</p>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-outline" onclick="AutoregApp.closeCorrespondencesDialog()">
+        <i class="fas fa-arrow-left"></i> Назад
+        </button>
+    </div>
+    </div>
+</div>
+
+<div id="settings-modal" class="modal">
+    <div class="modal-content">
+    <div class="modal-header">
+        <h2><i class="fas fa-cog"></i> Настройки</h2>
+        <button class="close-btn" onclick="AutoregApp.closeSettingsDialog()">
+        <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="modal-body">
+        <div id="settings-fields">
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-outline" onclick="AutoregApp.closeSettingsDialog()">
+        <i class="fas fa-arrow-left"></i> Назад
+        </button>
+        <button class="btn btn-primary" onclick="AutoregApp.saveSettings()">
+        <i class="fas fa-save"></i> Сохранить
+        </button>
+    </div>
+    </div>
+</div>
+
+<div id="task-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-clipboard-list"></i> Создание реестра</h2>
+            <button class="close-btn" onclick="AutoregApp.closeTaskDialog()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="input-group">
+                <label for="task-number">Укажите номер задачи:</label>
+                <input type="number" id="task-number" placeholder="Введите номер задачи" min="1">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="AutoregApp.closeTaskDialog()">
+                <i class="fas fa-times"></i> Отменить
+            </button>
+            <button class="btn btn-primary" onclick="AutoregApp.startProcessing()">
+                <i class="fas fa-arrow-right"></i> Далее
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="progress-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-sync-alt fa-spin"></i> Обработка реестра</h2>
+        </div>
+        <img src="{{ url_for('static', filename='animation.gif') }}" alt="loading">
+        <div class="modal-body-loading">
+            <div class="progress-info">
+                <div id="progress-step">Инициализация...</div>
+                <div id="progress-percentage">0%</div>
+            </div>
+            <div class="progress-bar-large">
+                <div class="progress-bar-fill-large" id="progress-bar-fill"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-danger" onclick="AutoregApp.cancelProcessing()">
+                <i class="fas fa-stop"></i> Отменить
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Конфигурация автореестра -->
+<script>
+    window.autoregConfig = {{ autoreg_data.config | tojson }};
+</script>
+
+<script src="{{ url_for('static', filename='js/autoreg-app.js') }}"></script>
+
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!-- web/templates/admin/users.html -->
+{% extends 'admin/base.html' %}
+
+{% block title %}Управление пользователями{% endblock %}
+
+{% block breadcrumb %}
+<i class="fas fa-chevron-right"></i>
+<span>Пользователи</span>
+{% endblock %}
+
+{% block content %}
+<div class="user-management">
+    <div class="users-header">
+        <div class="header-left">
+            <h2>Управление пользователями</h2>
+            <p>Управление учетными записями и правами доступа</p>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-primary" onclick="showAddUserModal()">
+                <i class="fas fa-plus"></i> Добавить пользователя
+            </button>
+        </div>
+    </div>
+
+    <!-- User Stats -->
+    <div class="stats-grid">
+        <div class="stat-card primary">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <h3>24</h3>
+                <p>Всего пользователей</p>
+            </div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-icon">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="stat-content">
+                <h3>18</h3>
+                <p>Активных</p>
+            </div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-icon">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <div class="stat-content">
+                <h3>4</h3>
+                <p>Онлайн сейчас</p>
+            </div>
+        </div>
+        <div class="stat-card danger">
+            <div class="stat-icon">
+                <i class="fas fa-user-times"></i>
+            </div>
+            <div class="stat-content">
+                <h3>2</h3>
+                <p>Заблокированных</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3><i class="fas fa-table"></i> Список пользователей</h3>
+            <div class="card-actions">
+                <input type="text" placeholder="Поиск пользователей..." class="form-control" style="width: 200px;">
+                <select class="form-select">
+                    <option>Все роли</option>
+                    <option>Администратор</option>
+                    <option>Модератор</option>
+                    <option>Пользователь</option>
+                </select>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="users-table">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Пользователь</th>
+                            <th>Email</th>
+                            <th>Роль</th>
+                            <th>Статус</th>
+                            <th>Последний вход</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar">A</div>
+                                    <div>
+                                        <div class="user-name">Administrator</div>
+                                        <div class="user-id">#1001</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>admin@company.com</td>
+                            <td><span class="role-badge admin">Администратор</span></td>
+                            <td><span class="status-badge online">Онлайн</span></td>
+                            <td>2 минуты назад</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline" title="Редактировать">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline" title="Настройки">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <!-- More user rows... -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.users-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.data-table th {
+    background: var(--bg-tertiary);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+}
+
+.user-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.user-id {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.role-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.role-badge.admin { background: var(--danger-color); color: white; }
+.role-badge.moderator { background: var(--warning-color); color: white; }
+.role-badge.user { background: var(--info-color); color: white; }
+
+.status-badge.online { background: var(--success-color); color: white; }
+.status-badge.offline { background: var(--text-secondary); color: white; }
+</style>
+{% endblock %}

@@ -1,0 +1,277 @@
+<!-- web/templates/admin/logs.html -->
+{% extends 'admin/base.html' %}
+
+{% block title %}Просмотр логов{% endblock %}
+
+{% block breadcrumb %}
+<i class="fas fa-chevron-right"></i>
+<span>Логи</span>
+{% endblock %}
+
+{% block content %}
+<div class="logs-viewer">
+    <!-- Log Controls -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3><i class="fas fa-filter"></i> Фильтры логов</h3>
+            <div class="card-actions">
+                <button class="btn btn-primary" onclick="refreshLogs()">
+                    <i class="fas fa-sync"></i> Обновить
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="log-filters">
+                <select id="logLevel" class="form-select">
+                    <option value="all">Все уровни</option>
+                    <option value="error">Ошибки</option>
+                    <option value="warning">Предупреждения</option>
+                    <option value="info">Информация</option>
+                    <option value="debug">Отладка</option>
+                </select>
+                
+                <select id="logSource" class="form-select">
+                    <option value="all">Все источники</option>
+                    <option value="main.py">main.py</option>
+                    <option value="routes.py">routes.py</option>
+                    <option value="admin.py">admin.py</option>
+                </select>
+                
+                <input type="text" id="logSearch" class="form-control" placeholder="Поиск в логах...">
+                
+                <button class="btn btn-outline" onclick="clearLogs()">
+                    <i class="fas fa-trash"></i> Очистить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Display -->
+    <div class="dashboard-card">
+        <div class="card-header">
+            <h3><i class="fas fa-file-alt"></i> Журнал событий</h3>
+            <div class="log-stats">
+                <span class="log-count">Записей: <strong id="logCount">0</strong></span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="logContainer" class="log-container"></div>
+            <div class="log-pagination">
+                <button class="btn btn-outline" id="prevPage" onclick="changePage(-1)">
+                    <i class="fas fa-chevron-left"></i> Предыдущая
+                </button>
+                <span class="page-info" id="pageInfo">Страница 1 из 1</span>
+                <button class="btn btn-outline" id="nextPage" onclick="changePage(1)">
+                    Следующая <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.log-filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr auto;
+    gap: 1rem;
+    align-items: center;
+}
+
+.log-container {
+    background: var(--bg-primary);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    max-height: 600px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+}
+
+.log-entry {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    gap: 1rem;
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-timestamp {
+    color: var(--text-secondary);
+    white-space: nowrap;
+    min-width: 150px;
+}
+
+.log-level {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 80px;
+    text-align: center;
+}
+
+.log-level.error { background: var(--danger-color); color: white; }
+.log-level.warning { background: var(--warning-color); color: white; }
+.log-level.info { background: var(--info-color); color: white; }
+.log-level.debug { background: var(--text-secondary); color: white; }
+
+.log-message {
+    flex: 1;
+    color: var(--text-primary);
+}
+
+.log-source {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    min-width: 100px;
+}
+
+.log-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.page-info {
+    color: var(--text-secondary);
+}
+
+.log-stats {
+    display: flex;
+    gap: 1rem;
+    color: var(--text-secondary);
+}
+
+.form-control {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    color: var(--text-primary);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+</style>
+
+<script>
+let currentLogPage = 1;
+let totalLogPages = 1;
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadLogs();
+    
+    // Add event listeners for filters
+    document.getElementById('logLevel').addEventListener('change', loadLogs);
+    document.getElementById('logSource').addEventListener('change', loadLogs);
+    document.getElementById('logSearch').addEventListener('input', debounce(loadLogs, 500));
+});
+
+async function loadLogs() {
+    const level = document.getElementById('logLevel').value;
+    const source = document.getElementById('logSource').value;
+    const search = document.getElementById('logSearch').value;
+    
+    try {
+        const params = new URLSearchParams({
+            page: currentLogPage,
+            level: level,
+            limit: 50
+        });
+        
+        if (search) params.append('search', search);
+        if (source !== 'all') params.append('source', source);
+        
+        const response = await fetch(`/admin/api/logs?${params}`);
+        const data = await response.json();
+        
+        displayLogs(data.logs);
+        updatePagination(data.page, data.pages, data.total);
+        
+    } catch (error) {
+        console.error('Error loading logs:', error);
+    }
+}
+
+function displayLogs(logs) {
+    const container = document.getElementById('logContainer');
+    
+    if (logs.length === 0) {
+        container.innerHTML = `
+            <div class="no-data">
+                <i class="fas fa-info-circle"></i>
+                <p>Логи не найдены</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = logs.map(log => `
+        <div class="log-entry">
+            <div class="log-timestamp">${new Date(log.timestamp).toLocaleString()}</div>
+            <div class="log-level ${log.level.toLowerCase()}">${log.level}</div>
+            <div class="log-source">${log.source}</div>
+            <div class="log-message">${escapeHtml(log.message)}</div>
+        </div>
+    `).join('');
+}
+
+function updatePagination(page, pages, total) {
+    currentLogPage = page;
+    totalLogPages = pages;
+    
+    document.getElementById('logCount').textContent = total;
+    document.getElementById('pageInfo').textContent = `Страница ${page} из ${pages}`;
+    document.getElementById('prevPage').disabled = page <= 1;
+    document.getElementById('nextPage').disabled = page >= pages;
+}
+
+function changePage(delta) {
+    const newPage = currentLogPage + delta;
+    if (newPage >= 1 && newPage <= totalLogPages) {
+        currentLogPage = newPage;
+        loadLogs();
+    }
+}
+
+function refreshLogs() {
+    currentLogPage = 1;
+    loadLogs();
+}
+
+function clearLogs() {
+    if (confirm('Вы уверены, что хотите очистить все логи?')) {
+        // Implementation for clearing logs
+        console.log('Clearing logs...');
+    }
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,3 @@
+SELECT [номер договора к пролонгации], [База для пролонгации] as [Премия]
+from [Controlling].[dbo].[_prolong_auto_base_new_ad] pn with(nolock)
+where 1 = 1 and [номер договора к пролонгации] in ({contracts_strss});

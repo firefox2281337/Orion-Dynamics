@@ -1,0 +1,350 @@
+<!-- web/templates/admin/terminal.html -->
+{% extends 'admin/base.html' %}
+
+{% block title %}Веб-терминал{% endblock %}
+
+{% block breadcrumb %}
+<i class="fas fa-chevron-right"></i>
+<span>Терминал</span>
+{% endblock %}
+
+{% block content %}
+<div class="web-terminal">
+    <div class="terminal-header">
+        <div class="terminal-title">
+            <i class="fas fa-terminal"></i>
+            Веб-терминал
+        </div>
+        <div class="terminal-actions">
+            <button class="btn btn-sm btn-outline" onclick="clearTerminal()">
+                <i class="fas fa-trash"></i> Очистить
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="killProcess()" id="killBtn" disabled>
+                <i class="fas fa-stop"></i> Остановить
+            </button>
+        </div>
+    </div>
+    
+    <div class="terminal-container">
+        <div id="terminal" class="terminal-output"></div>
+        <div class="terminal-input">
+            <span class="prompt">$</span>
+            <input type="text" id="commandInput" class="command-input" placeholder="Введите команду..." autocomplete="off">
+        </div>
+    </div>
+    
+    <div class="terminal-info">
+        <div class="info-item">
+            <span>Статус:</span>
+            <span id="terminalStatus" class="status ready">Готов</span>
+        </div>
+        <div class="info-item">
+            <span>Последняя команда:</span>
+            <span id="lastCommand">-</span>
+        </div>
+        <div class="info-item">
+            <span>Время выполнения:</span>
+            <span id="executionTime">-</span>
+        </div>
+    </div>
+</div>
+
+<style>
+.web-terminal {
+    height: calc(100vh - 200px);
+    display: flex;
+    flex-direction: column;
+}
+
+.terminal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.terminal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.terminal-container {
+    flex: 1;
+    background: #0c0c0c;
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-bottom: none;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Courier New', monospace;
+}
+
+.terminal-output {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    color: #00ff00;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.terminal-input {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-top: 1px solid #333;
+    background: #0c0c0c;
+}
+
+.prompt {
+    color: #00ff00;
+    margin-right: 0.5rem;
+    font-weight: bold;
+}
+
+.command-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #00ff00;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+}
+
+.terminal-info {
+    display: flex;
+    gap: 2rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.info-item {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.info-item span:first-child {
+    font-weight: 500;
+}
+
+.status {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.status.ready { background: var(--success-color); color: white; }
+.status.running { background: var(--warning-color); color: white; }
+.status.error { background: var(--danger-color); color: white; }
+
+.command-line {
+    margin-bottom: 0.5rem;
+}
+
+.command-prompt {
+    color: #00ff00;
+}
+
+.command-text {
+    color: #ffffff;
+}
+
+.command-output {
+    color: #cccccc;
+    margin-left: 1rem;
+    white-space: pre-wrap;
+}
+
+.command-error {
+    color: #ff6b6b;
+    margin-left: 1rem;
+    white-space: pre-wrap;
+}
+</style>
+
+<script>
+let commandHistory = [];
+let historyIndex = -1;
+let isExecuting = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('commandInput');
+    
+    input.addEventListener('keydown', handleKeyDown);
+    input.focus();
+    
+    // Add welcome message
+    addOutput('Добро пожаловать в веб-терминал администратора', 'info');
+    addOutput('Введите команду и нажмите Enter для выполнения', 'info');
+    addOutput('Доступные команды: ls, pwd, cat, ps, top, df, free, help', 'info');
+});
+
+function handleKeyDown(event) {
+    const input = event.target;
+    
+    switch (event.key) {
+        case 'Enter':
+            if (!isExecuting) {
+                executeCommand(input.value.trim());
+                input.value = '';
+            }
+            break;
+            
+        case 'ArrowUp':
+            event.preventDefault();
+            if (historyIndex < commandHistory.length - 1) {
+                historyIndex++;
+                input.value = commandHistory[commandHistory.length - 1 - historyIndex];
+            }
+            break;
+            
+        case 'ArrowDown':
+            event.preventDefault();
+            if (historyIndex > 0) {
+                historyIndex--;
+                input.value = commandHistory[commandHistory.length - 1 - historyIndex];
+            } else if (historyIndex === 0) {
+                historyIndex--;
+                input.value = '';
+            }
+            break;
+            
+        case 'Tab':
+            event.preventDefault();
+            // Implement tab completion if needed
+            break;
+    }
+}
+
+async function executeCommand(command) {
+    if (!command) return;
+    
+    // Add to history
+    commandHistory.push(command);
+    historyIndex = -1;
+    
+    // Show command in terminal
+    addOutput(`$ ${command}`, 'command');
+    
+    // Update status
+    setStatus('running', 'Выполняется...');
+    setLastCommand(command);
+    
+    const startTime = Date.now();
+    isExecuting = true;
+    document.getElementById('killBtn').disabled = false;
+    
+    try {
+        const response = await fetch('/admin/api/execute', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ command })
+        });
+        
+        const result = await response.json();
+        const executionTime = Date.now() - startTime;
+        
+        if (result.output) {
+            addOutput(result.output, 'output');
+        }
+        
+        if (result.error) {
+            addOutput(result.error, 'error');
+        }
+        
+        if (result.returncode !== 0) {
+            setStatus('error', `Ошибка (код: ${result.returncode})`);
+        } else {
+            setStatus('ready', 'Готов');
+        }
+        
+        setExecutionTime(`${executionTime}мс`);
+        
+    } catch (error) {
+        console.error('Command execution error:', error);
+        addOutput('Ошибка выполнения команды', 'error');
+        setStatus('error', 'Ошибка');
+    } finally {
+        isExecuting = false;
+        document.getElementById('killBtn').disabled = true;
+        document.getElementById('commandInput').focus();
+    }
+}
+
+function addOutput(text, type = 'output') {
+    const terminal = document.getElementById('terminal');
+    const line = document.createElement('div');
+    line.className = `command-line ${type}`;
+    
+    switch (type) {
+        case 'command':
+            line.innerHTML = `<span class="command-prompt">${text}</span>`;
+            break;
+        case 'output':
+            line.innerHTML = `<span class="command-output">${escapeHtml(text)}</span>`;
+            break;
+        case 'error':
+            line.innerHTML = `<span class="command-error">${escapeHtml(text)}</span>`;
+            break;
+        case 'info':
+            line.innerHTML = `<span class="command-output" style="color: #64b5f6;"># ${escapeHtml(text)}</span>`;
+            break;
+    }
+    
+    terminal.appendChild(line);
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+function setStatus(type, text) {
+    const status = document.getElementById('terminalStatus');
+    status.className = `status ${type}`;
+    status.textContent = text;
+}
+
+function setLastCommand(command) {
+    document.getElementById('lastCommand').textContent = command;
+}
+
+function setExecutionTime(time) {
+    document.getElementById('executionTime').textContent = time;
+}
+
+function clearTerminal() {
+    document.getElementById('terminal').innerHTML = '';
+    addOutput('Terminal cleared', 'info');
+}
+
+function killProcess() {
+    if (isExecuting) {
+        // In a real implementation, this would send a signal to kill the running process
+        addOutput('^C', 'command');
+        addOutput('Process interrupted', 'error');
+        setStatus('ready', 'Готов');
+        isExecuting = false;
+        document.getElementById('killBtn').disabled = true;
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}
